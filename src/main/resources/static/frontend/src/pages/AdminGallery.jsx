@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { Image, Plus, Trash2, ToggleLeft, ToggleRight, X, Upload, Link, Check, Sparkles } from 'lucide-react';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminGallery() {
   const [images, setImages] = useState([]);
@@ -8,7 +10,7 @@ export default function AdminGallery() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ title: '', imageUrl: '', active: true });
   const [uploadMode, setUploadMode] = useState('file'); // 'file' or 'url'
-  const [base64Files, setBase64Files] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [fileNames, setFileNames] = useState([]);
   const [dragActive, setDragActive] = useState(false);
 
@@ -52,35 +54,23 @@ export default function AdminGallery() {
     }
   };
 
-  const readFileAsBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve({ name: file.name, base64: reader.result });
-      reader.onerror = (err) => reject(err);
-    });
-  };
-
-  const handleFiles = async (filesList) => {
-    const loaded = [];
+  const handleFiles = (filesList) => {
+    const validFiles = [];
+    const names = [];
     for (let file of Array.from(filesList)) {
       if (!file.type.startsWith('image/')) {
         alert(`File "${file.name}" is not an image file (PNG, JPG, WebP).`);
         continue;
       }
-      if (file.size > 4 * 1024 * 1024) {
-        alert(`File "${file.name}" is too large. Max 4MB.`);
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File "${file.name}" is too large. Max 10MB.`);
         continue;
       }
-      try {
-        const res = await readFileAsBase64(file);
-        loaded.push(res);
-      } catch (err) {
-        console.error(err);
-      }
+      validFiles.push(file);
+      names.push(file.name);
     }
-    setBase64Files(prev => [...prev, ...loaded.map(x => x.base64)]);
-    setFileNames(prev => [...prev, ...loaded.map(x => x.name)]);
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    setFileNames(prev => [...prev, ...names]);
   };
 
   const handleSubmit = async (e) => {
@@ -93,16 +83,21 @@ export default function AdminGallery() {
 
     try {
       if (uploadMode === 'file') {
-        if (base64Files.length === 0) {
+        if (selectedFiles.length === 0) {
           alert('Please select or upload at least one image file.');
           return;
         }
         
-        // Upload all files sequentially
-        for (let i = 0; i < base64Files.length; i++) {
+        // Upload all files sequentially to Firebase Storage first
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const storageRef = ref(storage, `gallery/${Date.now()}_${file.name}`);
+          await uploadBytes(storageRef, file);
+          const downloadUrl = await getDownloadURL(storageRef);
+
           const payload = {
             title: formData.title,
-            imageUrl: base64Files[i],
+            imageUrl: downloadUrl,
             active: formData.active,
             mainPreview: i === 0 // Mark the first one as cover by default if none exists yet
           };
@@ -126,12 +121,12 @@ export default function AdminGallery() {
       
       // Reset form & state
       setFormData({ title: '', imageUrl: '', active: true });
-      setBase64Files([]);
+      setSelectedFiles([]);
       setFileNames([]);
       setShowModal(false);
       fetchImages();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to add image.');
+      alert(err.response?.data?.error || err.message || 'Failed to add image.');
     }
   };
 
@@ -179,7 +174,7 @@ export default function AdminGallery() {
         <button
           onClick={() => {
             setFormData({ title: '', imageUrl: '', active: true });
-            setBase64Files([]);
+            setSelectedFiles([]);
             setFileNames([]);
             setShowModal(true);
           }}
@@ -411,14 +406,14 @@ export default function AdminGallery() {
                       className="hidden"
                     />
                     
-                    {base64Files.length > 0 ? (
+                    {selectedFiles.length > 0 ? (
                       <div className="space-y-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/20">
                           <Check className="w-5 h-5" />
                         </div>
                         <div>
                           <p className="text-xs text-slate-200 font-bold max-w-[250px] mx-auto truncate">
-                            {base64Files.length} images selected
+                            {selectedFiles.length} images selected
                           </p>
                           <p className="text-[9px] text-slate-400 mt-1 truncate max-w-[300px] mx-auto">
                             {fileNames.join(', ')}
@@ -427,7 +422,7 @@ export default function AdminGallery() {
                         <button
                           type="button"
                           onClick={() => {
-                            setBase64Files([]);
+                            setSelectedFiles([]);
                             setFileNames([]);
                           }}
                           className="text-[10px] text-red-400 hover:text-red-300 font-bold underline cursor-pointer"
@@ -446,7 +441,7 @@ export default function AdminGallery() {
                           </span>{' '}
                           <span className="text-slate-400">or drag and drop</span>
                         </div>
-                        <p className="text-[10px] text-slate-500">PNG, JPG, WebP up to 4MB per file</p>
+                        <p className="text-[10px] text-slate-500">PNG, JPG, WebP up to 10MB per file</p>
                       </label>
                     )}
                   </div>
@@ -471,14 +466,14 @@ export default function AdminGallery() {
               )}
 
               {/* Multiple Images Preview Grid */}
-              {uploadMode === 'file' && base64Files.length > 0 && (
+              {uploadMode === 'file' && selectedFiles.length > 0 && (
                 <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5 space-y-2">
-                  <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">Preview ({base64Files.length} images)</span>
+                  <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">Preview ({selectedFiles.length} images)</span>
                   <div className="grid grid-cols-4 gap-2 max-h-[120px] overflow-y-auto pr-1">
-                    {base64Files.map((b64, idx) => (
+                    {selectedFiles.map((file, idx) => (
                       <div key={idx} className="aspect-video rounded overflow-hidden bg-black relative border border-white/5">
                         <img
-                          src={b64}
+                          src={URL.createObjectURL(file)}
                           alt={`Preview ${idx + 1}`}
                           className="w-full h-full object-cover"
                         />

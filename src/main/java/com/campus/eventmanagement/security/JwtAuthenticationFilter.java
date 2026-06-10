@@ -18,9 +18,11 @@ import com.campus.eventmanagement.util.JwtTokenProvider;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final com.campus.eventmanagement.repository.UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, com.campus.eventmanagement.repository.UserRepository userRepository) {
         this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -28,15 +30,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = getJwtFromRequest(request);
 
-        if (token != null && tokenProvider.validateToken(token)) {
-            String email = tokenProvider.getEmailFromToken(token);
-            String role = tokenProvider.getRoleFromToken(token);
+        if (token != null) {
+            String email = null;
+            String role = null;
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    email, null, Collections.singletonList(new SimpleGrantedAuthority(role)));
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            if (tokenProvider.validateToken(token)) {
+                email = tokenProvider.getEmailFromToken(token);
+                role = tokenProvider.getRoleFromToken(token);
+            } else {
+                try {
+                    if (!com.google.firebase.FirebaseApp.getApps().isEmpty()) {
+                        com.google.firebase.auth.FirebaseToken decodedToken = com.google.firebase.auth.FirebaseAuth.getInstance().verifyIdToken(token);
+                        email = decodedToken.getEmail();
+                        role = "ROLE_USER";
+                        if (email != null) {
+                            java.util.Optional<com.campus.eventmanagement.entity.User> userOpt = userRepository.findByEmail(email);
+                            if (userOpt.isPresent()) {
+                                role = userOpt.get().getRole().name();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // Suppress and continue without setting context (authentication fails)
+                }
+            }
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (email != null && role != null) {
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        email, null, Collections.singletonList(new SimpleGrantedAuthority(role)));
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);

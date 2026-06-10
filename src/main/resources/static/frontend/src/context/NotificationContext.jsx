@@ -30,7 +30,8 @@ export const NotificationProvider = ({ children }) => {
 
     fetchNotifications();
 
-    const ws = new WebSocket('ws://localhost:8000/ws/notifications');
+    const wsUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000';
+    const ws = new WebSocket(`${wsUrl}/ws/notifications`);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {

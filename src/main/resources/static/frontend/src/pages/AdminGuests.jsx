@@ -4,6 +4,8 @@ import {
   Users, Plus, Trash2, Folder, Image, Upload, 
   Sparkles, X, Grid, CheckCircle2 
 } from 'lucide-react';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminGuests() {
   const [guests, setGuests] = useState([]);
@@ -16,7 +18,7 @@ export default function AdminGuests() {
     active: true
   });
   
-  const [base64File, setBase64File] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
@@ -71,12 +73,7 @@ export default function AdminGuests() {
     }
 
     setFileName(file.name);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setBase64File(reader.result);
-    };
-    reader.readAsDataURL(file);
+    setSelectedFile(file);
   };
 
   const handleSubmit = async (e) => {
@@ -87,12 +84,19 @@ export default function AdminGuests() {
       return;
     }
 
-    const payload = {
-      ...formData,
-      photo: base64File
-    };
-
     try {
+      let photoUrl = '';
+      if (selectedFile) {
+        const storageRef = ref(storage, `guests/${Date.now()}_${selectedFile.name}`);
+        await uploadBytes(storageRef, selectedFile);
+        photoUrl = await getDownloadURL(storageRef);
+      }
+
+      const payload = {
+        ...formData,
+        photo: photoUrl
+      };
+
       await api.post('/api/guests', payload);
       alert('Guest Dignitary details saved successfully!');
       
@@ -103,12 +107,12 @@ export default function AdminGuests() {
         priority: 1,
         active: true
       });
-      setBase64File(null);
+      setSelectedFile(null);
       setFileName('');
       setShowModal(false);
       fetchGuests();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to save guest.');
+      alert(err.response?.data?.error || err.message || 'Failed to save guest.');
     }
   };
 
@@ -219,7 +223,7 @@ export default function AdminGuests() {
             <button
               onClick={() => {
                 setShowModal(false);
-                setBase64File(null);
+                setSelectedFile(null);
                 setFileName('');
               }}
               className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-950 hover:bg-slate-900 text-slate-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
@@ -290,7 +294,7 @@ export default function AdminGuests() {
                     onChange={handleFileChange}
                   />
 
-                  {base64File ? (
+                  {selectedFile ? (
                     <div className="space-y-2">
                       <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
                       <p className="text-xs font-bold text-slate-300">Photo Loaded: {fileName}</p>
@@ -298,7 +302,7 @@ export default function AdminGuests() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setBase64File(null);
+                          setSelectedFile(null);
                           setFileName('');
                         }}
                         className="text-[10px] bg-red-500/20 text-red-400 border border-red-500/20 px-2 py-1 rounded"
@@ -322,7 +326,7 @@ export default function AdminGuests() {
                   type="button"
                   onClick={() => {
                     setShowModal(false);
-                    setBase64File(null);
+                    setSelectedFile(null);
                     setFileName('');
                   }}
                   className="flex-1 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 font-bold py-3 rounded-xl transition-all cursor-pointer"

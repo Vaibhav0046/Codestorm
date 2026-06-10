@@ -4,14 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node node_modules/vite/dist/node/cli.js",
+    "build": "node node_modules/vite/dist/node/cli.js build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "node node_modules/vite/dist/node/cli.js preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.16.1",
+    "firebase": "^12.14.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

@@ -30,6 +30,8 @@ public class User {
 
     private String phone;
 
+    private String fcmToken;
+
     private Role role;
 
     private LocalDateTime createdAt = LocalDateTime.now();

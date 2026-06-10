@@ -50,4 +50,14 @@ public class ProfileController {
         savedUser.setPassword(null); // Clear password from response for safety
         return savedUser;
     }
+
+    @PutMapping("/fcm-token")
+    public String updateFcmToken(@RequestBody java.util.Map<String, String> payload) {
+        String token = payload.get("token");
+        User user = userRepository.findByEmail(getAuthenticatedUserEmail())
+                .orElseThrow(() -> new RuntimeException("Profile not found!"));
+        user.setFcmToken(token);
+        userRepository.save(user);
+        return "FCM Token updated successfully";
+    }
 }

@@ -4,6 +4,8 @@ import {
   Trophy, Plus, Trash2, Folder, Image, BookOpen, 
   Upload, Sparkles, X, Grid, FileText, CheckCircle2, Eye
 } from 'lucide-react';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminHighlights() {
   const [highlights, setHighlights] = useState([]);
@@ -17,7 +19,7 @@ export default function AdminHighlights() {
     active: true
   });
   
-  const [base64Files, setBase64Files] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [fileNames, setFileNames] = useState([]);
   const [dragActive, setDragActive] = useState(false);
 
@@ -74,24 +76,12 @@ export default function AdminHighlights() {
       return true;
     });
 
-    const filePromises = validFiles.map(file => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({ name: file.name, base64: reader.result });
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(filePromises).then(results => {
-      setBase64Files(prev => [...prev, ...results.map(r => r.base64)]);
-      setFileNames(prev => [...prev, ...results.map(r => r.name)]);
-    });
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    setFileNames(prev => [...prev, ...validFiles.map(f => f.name)]);
   };
 
   const removeSelectedFile = (idx) => {
-    setBase64Files(prev => prev.filter((_, i) => i !== idx));
+    setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
     setFileNames(prev => prev.filter((_, i) => i !== idx));
   };
 
@@ -103,7 +93,7 @@ export default function AdminHighlights() {
       return;
     }
 
-    if (base64Files.length === 0) {
+    if (selectedFiles.length === 0) {
       alert('Please select at least one image file.');
       return;
     }
@@ -111,12 +101,20 @@ export default function AdminHighlights() {
     try {
       setLoading(true);
       
-      // Prepare all payloads
-      const payloads = base64Files.map(base64 => ({
-        ...formData,
-        yearTitle: formData.yearTitle.trim().toUpperCase(),
-        imageUrl: base64
-      }));
+      const payloads = [];
+      // Upload all files sequentially to Firebase Storage first
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const storageRef = ref(storage, `highlights/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+
+        payloads.push({
+          ...formData,
+          yearTitle: formData.yearTitle.trim().toUpperCase(),
+          imageUrl: downloadUrl
+        });
+      }
 
       await api.post('/api/highlights/bulk', payloads);
       
@@ -130,12 +128,12 @@ export default function AdminHighlights() {
         description: '',
         active: true
       });
-      setBase64Files([]);
+      setSelectedFiles([]);
       setFileNames([]);
       setShowModal(false);
       fetchHighlights();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to save highlights.');
+      alert(err.response?.data?.error || err.message || 'Failed to save highlights.');
     } finally {
       setLoading(false);
     }
@@ -175,7 +173,7 @@ export default function AdminHighlights() {
       description: album.description,
       active: true
     });
-    setBase64Files([]);
+    setSelectedFiles([]);
     setFileNames([]);
     setShowModal(true);
   };
@@ -225,7 +223,7 @@ export default function AdminHighlights() {
               description: '',
               active: true
             });
-            setBase64Files([]);
+            setSelectedFiles([]);
             setFileNames([]);
             setShowModal(true);
           }}
@@ -335,7 +333,7 @@ export default function AdminHighlights() {
             <button
               onClick={() => {
                 setShowModal(false);
-                setBase64Files([]);
+                setSelectedFiles([]);
                 setFileNames([]);
               }}
               className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-950 hover:bg-slate-900 text-slate-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
@@ -484,7 +482,7 @@ export default function AdminHighlights() {
                   disabled={loading}
                   className="flex-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:bg-slate-900 disabled:text-slate-500"
                 >
-                  {loading ? 'Saving Photos...' : `Save ${base64Files.length > 0 ? base64Files.length : ''} Highlight Cards`}
+                  {loading ? 'Saving Photos...' : `Save ${selectedFiles.length > 0 ? selectedFiles.length : ''} Highlight Cards`}
                 </button>
               </div>
             </form>
