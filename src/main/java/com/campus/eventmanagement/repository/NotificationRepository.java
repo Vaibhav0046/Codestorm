@@ -1,17 +1,17 @@
 package com.campus.eventmanagement.repository;
 
 import java.util.List;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import com.campus.eventmanagement.entity.Notification;
 import com.campus.eventmanagement.entity.User;
 
 @Repository
-public interface NotificationRepository extends MongoRepository<Notification, Long> {
-    
-    @Query(value = "{ '$or': [ { 'recipient': null }, { 'recipient': ?0 } ] }", sort = "{ 'createdAt': -1 }")
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    @Query("SELECT n FROM Notification n WHERE n.recipient IS NULL OR n.recipient = :user ORDER BY n.createdAt DESC")
     List<Notification> findByUserNotifications(User user);
-    
+
     List<Notification> findByRecipientIsNullOrderByCreatedAtDesc();
 }

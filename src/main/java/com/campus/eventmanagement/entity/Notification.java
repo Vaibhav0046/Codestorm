@@ -1,13 +1,12 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import jakarta.persistence.*;
 import lombok.*;
 import com.campus.eventmanagement.enums.NotificationType;
 import java.time.LocalDateTime;
 
-@Document(collection = "notifications")
+@Entity
+@Table(name = "notifications")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,15 +14,19 @@ import java.time.LocalDateTime;
 public class Notification {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "TEXT")
     private String message;
 
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @DocumentReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id")
     private User recipient;
 }

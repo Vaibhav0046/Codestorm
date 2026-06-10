@@ -4,8 +4,6 @@ import {
   Trophy, Plus, Trash2, Folder, Image, BookOpen, 
   Upload, Sparkles, X, Grid, FileText, CheckCircle2, Eye
 } from 'lucide-react';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminHighlights() {
   const [highlights, setHighlights] = useState([]);
@@ -102,12 +100,15 @@ export default function AdminHighlights() {
       setLoading(true);
       
       const payloads = [];
-      // Upload all files sequentially to Firebase Storage first
+      // Upload all files sequentially to backend
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
-        const storageRef = ref(storage, `highlights/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(storageRef);
+        const uploadForm = new FormData();
+        uploadForm.append('file', file);
+        const uploadRes = await api.post('/api/upload', uploadForm, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const downloadUrl = uploadRes.data.url;
 
         payloads.push({
           ...formData,

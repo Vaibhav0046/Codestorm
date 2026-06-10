@@ -3,16 +3,11 @@ package com.campus.eventmanagement.entity;
 import com.campus.eventmanagement.enums.FoodPreference;
 import com.campus.eventmanagement.enums.TShirtSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import jakarta.persistence.*;
+import lombok.*;
 
-@Document(collection = "participants")
+@Entity
+@Table(name = "participants")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,9 +16,11 @@ import lombok.ToString;
 public class Participant {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @DocumentReference(lazy = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registration_id")
     @JsonIgnore
     private Registration registration;
 
@@ -33,8 +30,10 @@ public class Participant {
 
     private String phone;
 
+    @Enumerated(EnumType.STRING)
     private TShirtSize tshirtSize;
 
+    @Enumerated(EnumType.STRING)
     private FoodPreference foodPreference;
 
     private String college;

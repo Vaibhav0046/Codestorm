@@ -1,13 +1,12 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import lombok.*;
 import com.campus.eventmanagement.enums.EventType;
 import java.time.LocalDate;
 
-@Document(collection = "events")
+@Entity
+@Table(name = "events")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,13 +14,16 @@ import java.time.LocalDate;
 public class Event {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Indexed(unique = true)
+    @Column(unique = true, nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Enumerated(EnumType.STRING)
     private EventType type;
 
     private Integer minTeamSize;
@@ -41,10 +43,13 @@ public class Event {
     @Builder.Default
     private Integer maxBatchSize = 5;
 
+    @Column(columnDefinition = "TEXT")
     private String timetablePdf;
 
+    @Column(columnDefinition = "TEXT")
     private String extraInfo;
 
+    @Column(columnDefinition = "TEXT")
     private String paymentQr;
 
     private String upiId;

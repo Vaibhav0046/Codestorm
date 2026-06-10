@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { Image, Plus, Trash2, ToggleLeft, ToggleRight, X, Upload, Link, Check, Sparkles } from 'lucide-react';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminGallery() {
   const [images, setImages] = useState([]);
@@ -88,18 +86,21 @@ export default function AdminGallery() {
           return;
         }
         
-        // Upload all files sequentially to Firebase Storage first
+        // Upload all files sequentially to backend first
         for (let i = 0; i < selectedFiles.length; i++) {
           const file = selectedFiles[i];
-          const storageRef = ref(storage, `gallery/${Date.now()}_${file.name}`);
-          await uploadBytes(storageRef, file);
-          const downloadUrl = await getDownloadURL(storageRef);
+          const uploadForm = new FormData();
+          uploadForm.append('file', file);
+          const uploadRes = await api.post('/api/upload', uploadForm, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          const downloadUrl = uploadRes.data.url;
 
           const payload = {
             title: formData.title,
             imageUrl: downloadUrl,
             active: formData.active,
-            mainPreview: i === 0 // Mark the first one as cover by default if none exists yet
+            mainPreview: i === 0
           };
           await api.post('/api/gallery', payload);
         }

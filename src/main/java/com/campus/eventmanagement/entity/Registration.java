@@ -1,15 +1,14 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import jakarta.persistence.*;
 import lombok.*;
 import com.campus.eventmanagement.enums.RegistrationStatus;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "registrations")
+@Entity
+@Table(name = "registrations")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,12 +16,15 @@ import java.util.List;
 public class Registration {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @DocumentReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @DocumentReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id")
     private Event event;
 
     private String teamName;
@@ -30,6 +32,7 @@ public class Registration {
     @Builder.Default
     private LocalDateTime registrationDate = LocalDateTime.now();
 
+    @Enumerated(EnumType.STRING)
     @Builder.Default
     private RegistrationStatus status = RegistrationStatus.PENDING;
 
@@ -39,11 +42,12 @@ public class Registration {
 
     private String labAllotment;
 
+    @Column(columnDefinition = "TEXT")
     private String paymentScreenshot;
 
     private String utrNumber;
 
-    @DocumentReference
+    @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Participant> participants = new ArrayList<>();
 }

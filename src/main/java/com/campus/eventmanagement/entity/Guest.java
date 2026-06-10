@@ -1,10 +1,10 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import lombok.*;
 
-@Document(collection = "guests")
+@Entity
+@Table(name = "guests")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,10 +12,12 @@ import lombok.*;
 public class Guest {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String photo;
 
     @Builder.Default

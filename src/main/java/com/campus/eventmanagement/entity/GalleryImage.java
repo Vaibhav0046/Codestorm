@@ -1,11 +1,11 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 
-@Document(collection = "gallery_images")
+@Entity
+@Table(name = "gallery_images")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,10 +13,12 @@ import java.time.LocalDate;
 public class GalleryImage {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
     private LocalDate uploadedDate;

@@ -43,16 +43,13 @@ public class NotificationServiceImpl implements NotificationService {
                                            User recipient) {
 
         Notification notification = new Notification();
-
         notification.setMessage(message);
         notification.setType(type);
         notification.setRecipient(recipient);
         notification.setCreatedAt(LocalDateTime.now());
 
         Notification saved = notificationRepository.save(notification);
-
         pushWsNotification(saved);
-
         return saved;
     }
 
@@ -61,16 +58,13 @@ public class NotificationServiceImpl implements NotificationService {
                                               NotificationType type) {
 
         Notification notification = new Notification();
-
         notification.setMessage(message);
         notification.setType(type);
         notification.setRecipient(null);
         notification.setCreatedAt(LocalDateTime.now());
 
         Notification saved = notificationRepository.save(notification);
-
         pushWsNotification(saved);
-
         return saved;
     }
 
@@ -89,44 +83,5 @@ public class NotificationServiceImpl implements NotificationService {
                 note.getRecipient() != null ? note.getRecipient().getEmail() : "ALL"
         );
         webSocketHandler.broadcast(json);
-        sendFcmNotification(note);
-    }
-
-    private void sendFcmNotification(Notification note) {
-        try {
-            if (com.google.firebase.FirebaseApp.getApps().isEmpty()) {
-                return;
-            }
-
-            String title = "Campus Event Alert";
-            String body = note.getMessage();
-
-            if (note.getRecipient() != null) {
-                String token = note.getRecipient().getFcmToken();
-                if (token != null && !token.trim().isEmpty()) {
-                    com.google.firebase.messaging.Message message = com.google.firebase.messaging.Message.builder()
-                            .setToken(token)
-                            .setNotification(com.google.firebase.messaging.Notification.builder()
-                                    .setTitle(title)
-                                    .setBody(body)
-                                    .build())
-                            .putData("type", note.getType().name())
-                            .build();
-                    com.google.firebase.messaging.FirebaseMessaging.getInstance().send(message);
-                }
-            } else {
-                com.google.firebase.messaging.Message message = com.google.firebase.messaging.Message.builder()
-                        .setTopic("all-notifications")
-                        .setNotification(com.google.firebase.messaging.Notification.builder()
-                                .setTitle(title)
-                                .setBody(body)
-                                .build())
-                        .putData("type", note.getType().name())
-                        .build();
-                com.google.firebase.messaging.FirebaseMessaging.getInstance().send(message);
-            }
-        } catch (Exception e) {
-            System.err.println("FCM Error: Failed to dispatch push notification: " + e.getMessage());
-        }
     }
 }

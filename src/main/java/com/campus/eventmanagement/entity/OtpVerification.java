@@ -1,17 +1,19 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Document(collection = "otp_verifications")
+@Entity
+@Table(name = "otp_verifications")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class OtpVerification {
+
     @Id
+    @Column(name = "email", nullable = false)
     private String email;
 
     private String otp;

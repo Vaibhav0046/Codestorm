@@ -4,8 +4,6 @@ import {
   Users, Plus, Trash2, Folder, Image, Upload, 
   Sparkles, X, Grid, CheckCircle2 
 } from 'lucide-react';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminGuests() {
   const [guests, setGuests] = useState([]);
@@ -87,9 +85,12 @@ export default function AdminGuests() {
     try {
       let photoUrl = '';
       if (selectedFile) {
-        const storageRef = ref(storage, `guests/${Date.now()}_${selectedFile.name}`);
-        await uploadBytes(storageRef, selectedFile);
-        photoUrl = await getDownloadURL(storageRef);
+        const uploadForm = new FormData();
+        uploadForm.append('file', selectedFile);
+        const uploadRes = await api.post('/api/upload', uploadForm, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        photoUrl = uploadRes.data.url;
       }
 
       const payload = {

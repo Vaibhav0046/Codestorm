@@ -1,14 +1,13 @@
 package com.campus.eventmanagement.entity;
 
 import com.campus.eventmanagement.enums.Role;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,9 +16,10 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Indexed(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     private String password;
@@ -32,6 +32,7 @@ public class User {
 
     private String fcmToken;
 
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     private LocalDateTime createdAt = LocalDateTime.now();

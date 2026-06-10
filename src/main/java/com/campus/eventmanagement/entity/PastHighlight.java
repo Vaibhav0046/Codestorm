@@ -1,10 +1,10 @@
 package com.campus.eventmanagement.entity;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import lombok.*;
 
-@Document(collection = "past_highlights")
+@Entity
+@Table(name = "past_highlights")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,6 +12,7 @@ import lombok.*;
 public class PastHighlight {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String yearTitle;
@@ -20,8 +21,10 @@ public class PastHighlight {
 
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
     @Builder.Default
