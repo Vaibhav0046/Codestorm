@@ -59,12 +59,7 @@ export default function Signup() {
     try {
       const res = await api.post(`/api/auth/send-otp?email=${encodeURIComponent(formData.email)}`);
       setOtpSent(true);
-      if (res.data && res.data.otp) {
-        setFormData(prev => ({ ...prev, otp: res.data.otp }));
-        setSuccessMsg(`OTP Code auto-filled: ${res.data.otp}`);
-      } else {
-        setSuccessMsg("Verification code sent! Please check your inbox or server logs.");
-      }
+      setSuccessMsg("Verification code sent! Please check your email inbox.");
       setCooldown(60); // 60s cooldown
     } catch (err) {
       setError(err.response?.data?.error || "Failed to send verification code. Please try again.");

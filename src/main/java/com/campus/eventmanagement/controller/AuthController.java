@@ -31,10 +31,8 @@ public class AuthController {
     @PostMapping("/send-otp")
     public Map<String, String> sendOtp(@RequestParam String email) {
         authService.sendOtp(email);
-        String otp = authService.getLatestOtpForEmail(email);
         Map<String, String> response = new HashMap<>();
         response.put("message", "OTP sent successfully!");
-        response.put("otp", otp);
         return response;
     }
 }
