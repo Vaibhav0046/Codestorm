@@ -12,15 +12,15 @@ import com.campus.eventmanagement.service.AuthService;
 import com.campus.eventmanagement.util.JwtTokenProvider;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 @Service
@@ -30,21 +30,23 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final OtpVerificationRepository otpVerificationRepository;
-    private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:noreply@codestorm.app}")
-    private String senderEmail;
+    @Value("${resend.api.key:}")
+    private String resendApiKey;
+
+    @Value("${resend.from.email:onboarding@resend.dev}")
+    private String resendFromEmail;
+
+    private final RestClient restClient = RestClient.create();
 
     public AuthServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider tokenProvider,
-                           OtpVerificationRepository otpVerificationRepository,
-                           JavaMailSender mailSender) {
+                           OtpVerificationRepository otpVerificationRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.otpVerificationRepository = otpVerificationRepository;
-        this.mailSender = mailSender;
     }
 
     @PostConstruct
@@ -90,26 +92,33 @@ public class AuthServiceImpl implements AuthService {
         System.out.println("==========================================");
 
         try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            // Use ASCII-safe from address to avoid encoding issues across all SMTP servers
-            helper.setFrom(new jakarta.mail.internet.InternetAddress(senderEmail, "CodeStorm Event Management", "UTF-8"));
-            helper.setTo(email);
-            helper.setSubject("[CodeStorm] Your Registration OTP Verification Code");
-            helper.setText(buildOtpEmailHtml(email, otp), true);
-            mailSender.send(mimeMessage);
-            System.out.println("OTP email sent successfully to: " + email);
+            if (resendApiKey == null || resendApiKey.isBlank()) {
+                throw new RuntimeException("RESEND_API_KEY environment variable is not configured!");
+            }
+
+            Map<String, Object> payload = Map.of(
+                "from", "CodeStorm <" + resendFromEmail + ">",
+                "to", List.of(email),
+                "subject", "[CodeStorm] Your Registration OTP Verification Code",
+                "html", buildOtpEmailHtml(email, otp)
+            );
+
+            restClient.post()
+                .uri("https://api.resend.com/emails")
+                .header("Authorization", "Bearer " + resendApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .toBodilessEntity();
+
+            System.out.println("OTP email sent successfully via Resend to: " + email);
         } catch (Exception e) {
-            // Log full exception chain so the real cause is visible in Render logs
             System.err.println("==== OTP EMAIL SEND FAILURE ====");
             System.err.println("To: " + email);
             System.err.println("Error type: " + e.getClass().getName());
             System.err.println("Error message: " + e.getMessage());
             if (e.getCause() != null) {
-                System.err.println("Caused by: " + e.getCause().getClass().getName() + " - " + e.getCause().getMessage());
-            }
-            if (e.getCause() != null && e.getCause().getCause() != null) {
-                System.err.println("Root cause: " + e.getCause().getCause().getClass().getName() + " - " + e.getCause().getCause().getMessage());
+                System.err.println("Caused by: " + e.getCause().getMessage());
             }
             System.err.println("================================");
             throw new RuntimeException("Failed to send OTP email: " + e.getMessage());

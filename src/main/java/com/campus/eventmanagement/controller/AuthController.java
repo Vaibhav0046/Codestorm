@@ -1,14 +1,14 @@
 package com.campus.eventmanagement.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 import com.campus.eventmanagement.dto.AuthResponse;
 import com.campus.eventmanagement.dto.LoginRequest;
 import com.campus.eventmanagement.dto.SignupRequest;
 import com.campus.eventmanagement.service.AuthService;
-import jakarta.mail.internet.MimeMessage;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -17,14 +17,16 @@ import java.util.HashMap;
 public class AuthController {
 
     private final AuthService authService;
-    private final JavaMailSender mailSender;
+    private final RestClient restClient = RestClient.create();
 
-    @Value("${spring.mail.username:not-set}")
-    private String mailUsername;
+    @Value("${resend.api.key:}")
+    private String resendApiKey;
 
-    public AuthController(AuthService authService, JavaMailSender mailSender) {
+    @Value("${resend.from.email:onboarding@resend.dev}")
+    private String resendFromEmail;
+
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.mailSender = mailSender;
     }
 
     @PostMapping("/signup")
@@ -52,28 +54,32 @@ public class AuthController {
         return response;
     }
 
-    // TEMPORARY diagnostic endpoint — remove after fixing mail issue
+    // TEMPORARY diagnostic endpoint — remove after confirming mail works
     @GetMapping("/test-mail")
     public Map<String, String> testMail(@RequestParam String to) {
         Map<String, String> response = new HashMap<>();
-        response.put("configured_sender", mailUsername);
+        response.put("resend_api_key_set", (resendApiKey != null && !resendApiKey.isBlank()) ? "YES" : "NO");
+        response.put("from_email", resendFromEmail);
         try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            helper.setFrom(mailUsername);
-            helper.setTo(to);
-            helper.setSubject("[CodeStorm] SMTP Test");
-            helper.setText("<p>This is a test email from CodeStorm to verify SMTP is working.</p>", true);
-            mailSender.send(mimeMessage);
+            Map<String, Object> payload = Map.of(
+                "from", "CodeStorm <" + resendFromEmail + ">",
+                "to", List.of(to),
+                "subject", "[CodeStorm] SMTP Test",
+                "html", "<p>This is a test email from CodeStorm via Resend.</p>"
+            );
+            restClient.post()
+                .uri("https://api.resend.com/emails")
+                .header("Authorization", "Bearer " + resendApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .toBodilessEntity();
             response.put("status", "SUCCESS");
             response.put("message", "Test email sent to " + to);
         } catch (Exception e) {
             response.put("status", "FAILED");
             response.put("error_type", e.getClass().getName());
             response.put("error_message", e.getMessage());
-            response.put("cause", e.getCause() != null ? e.getCause().getMessage() : "null");
-            response.put("root_cause", (e.getCause() != null && e.getCause().getCause() != null)
-                    ? e.getCause().getCause().getMessage() : "null");
         }
         return response;
     }
