@@ -19,11 +19,14 @@ public class AuthController {
     private final AuthService authService;
     private final RestClient restClient = RestClient.create();
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
-    @Value("${resend.from.email:onboarding@resend.dev}")
-    private String resendFromEmail;
+    @Value("${brevo.from.email:vaibhav3538reddy@gmail.com}")
+    private String brevoFromEmail;
+
+    @Value("${brevo.from.name:CodeStorm Event Management}")
+    private String brevoFromName;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
@@ -58,18 +61,20 @@ public class AuthController {
     @GetMapping("/test-mail")
     public Map<String, String> testMail(@RequestParam String to) {
         Map<String, String> response = new HashMap<>();
-        response.put("resend_api_key_set", (resendApiKey != null && !resendApiKey.isBlank()) ? "YES" : "NO");
-        response.put("from_email", resendFromEmail);
+        response.put("brevo_api_key_set", (brevoApiKey != null && !brevoApiKey.isBlank()) ? "YES" : "NO");
+        response.put("from_email", brevoFromEmail);
         try {
+            Map<String, Object> sender = Map.of("name", brevoFromName, "email", brevoFromEmail);
+            Map<String, Object> recipient = Map.of("email", to);
             Map<String, Object> payload = Map.of(
-                "from", "CodeStorm <" + resendFromEmail + ">",
-                "to", List.of(to),
-                "subject", "[CodeStorm] SMTP Test",
-                "html", "<p>This is a test email from CodeStorm via Resend.</p>"
+                "sender", sender,
+                "to", List.of(recipient),
+                "subject", "[CodeStorm] Test Email via Brevo",
+                "htmlContent", "<p>This is a test email from CodeStorm via Brevo. If you received this, OTP emails will work!</p>"
             );
             restClient.post()
-                .uri("https://api.resend.com/emails")
-                .header("Authorization", "Bearer " + resendApiKey)
+                .uri("https://api.brevo.com/v3/smtp/email")
+                .header("api-key", brevoApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(payload)
                 .retrieve()

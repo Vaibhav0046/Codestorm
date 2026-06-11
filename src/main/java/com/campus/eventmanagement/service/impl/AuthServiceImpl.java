@@ -31,11 +31,14 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
     private final OtpVerificationRepository otpVerificationRepository;
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
-    @Value("${resend.from.email:onboarding@resend.dev}")
-    private String resendFromEmail;
+    @Value("${brevo.from.email:vaibhav3538reddy@gmail.com}")
+    private String brevoFromEmail;
+
+    @Value("${brevo.from.name:CodeStorm Event Management}")
+    private String brevoFromName;
 
     private final RestClient restClient = RestClient.create();
 
@@ -92,26 +95,34 @@ public class AuthServiceImpl implements AuthService {
         System.out.println("==========================================");
 
         try {
-            if (resendApiKey == null || resendApiKey.isBlank()) {
-                throw new RuntimeException("RESEND_API_KEY environment variable is not configured!");
+            if (brevoApiKey == null || brevoApiKey.isBlank()) {
+                throw new RuntimeException("BREVO_API_KEY environment variable is not configured!");
             }
 
+            // Brevo API v3 payload format
+            Map<String, Object> sender = Map.of(
+                "name", brevoFromName,
+                "email", brevoFromEmail
+            );
+            Map<String, Object> recipient = Map.of(
+                "email", email
+            );
             Map<String, Object> payload = Map.of(
-                "from", "CodeStorm <" + resendFromEmail + ">",
-                "to", List.of(email),
+                "sender", sender,
+                "to", List.of(recipient),
                 "subject", "[CodeStorm] Your Registration OTP Verification Code",
-                "html", buildOtpEmailHtml(email, otp)
+                "htmlContent", buildOtpEmailHtml(email, otp)
             );
 
             restClient.post()
-                .uri("https://api.resend.com/emails")
-                .header("Authorization", "Bearer " + resendApiKey)
+                .uri("https://api.brevo.com/v3/smtp/email")
+                .header("api-key", brevoApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(payload)
                 .retrieve()
                 .toBodilessEntity();
 
-            System.out.println("OTP email sent successfully via Resend to: " + email);
+            System.out.println("OTP email sent successfully via Brevo to: " + email);
         } catch (Exception e) {
             System.err.println("==== OTP EMAIL SEND FAILURE ====");
             System.err.println("To: " + email);
