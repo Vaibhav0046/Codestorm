@@ -3,6 +3,7 @@ package com.campus.eventmanagement.entity;
 import com.campus.eventmanagement.enums.FoodPreference;
 import com.campus.eventmanagement.enums.TShirtSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = "registration")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Participant {
 
     @Id

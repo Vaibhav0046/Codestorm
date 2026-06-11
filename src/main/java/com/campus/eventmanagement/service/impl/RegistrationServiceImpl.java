@@ -156,7 +156,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         Registration reg = getRegistrationById(id);
         reg.setStatus(status);
 
-        User user = (User) reg.getUser();
+        User user = reg.getUser();
 
         if (status == RegistrationStatus.APPROVED) {
 

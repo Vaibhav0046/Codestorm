@@ -35,4 +35,11 @@ public class AuthController {
         response.put("message", "OTP sent successfully!");
         return response;
     }
+
+    @GetMapping("/health")
+    public Map<String, String> health() {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "UP");
+        return response;
+    }
 }
