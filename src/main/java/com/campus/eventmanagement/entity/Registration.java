@@ -46,7 +46,7 @@ public class Registration {
 
     private String labAllotment;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String paymentScreenshot;
 
     private String utrNumber;
