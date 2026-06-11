@@ -1,22 +1,24 @@
 package com.campus.eventmanagement.controller;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/upload")
 public class FileUploadController {
 
-    @Value("${upload.dir:uploads}")
-    private String uploadDir;
+    private final Cloudinary cloudinary;
+
+    public FileUploadController(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+    }
 
     private void checkAdmin() {
         boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
@@ -27,36 +29,34 @@ public class FileUploadController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<Map<String, String>> uploadFile(
+            @RequestParam("file") MultipartFile file) throws IOException {
+
         checkAdmin();
 
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "No file provided"));
         }
 
-        // Validate image type
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             return ResponseEntity.badRequest().body(Map.of("error", "Only image files are allowed"));
         }
 
-        // Create upload directory if not exists
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
+        // Upload to Cloudinary — persistent, CDN-backed, survives redeployments
+        @SuppressWarnings("unchecked")
+        Map<String, Object> uploadResult = cloudinary.uploader().upload(
+            file.getBytes(),
+            ObjectUtils.asMap(
+                "folder",          "codestorm",
+                "resource_type",   "image",
+                "transformation",  ObjectUtils.asMap("quality", "auto", "fetch_format", "auto")
+            )
+        );
 
-        // Generate unique filename
-        String originalFilename = file.getOriginalFilename();
-        String extension = (originalFilename != null && originalFilename.contains("."))
-                ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                : ".jpg";
-        String filename = UUID.randomUUID().toString() + extension;
+        String secureUrl = (String) uploadResult.get("secure_url");
+        System.out.println("Uploaded to Cloudinary: " + secureUrl);
 
-        Path filePath = uploadPath.resolve(filename);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        String fileUrl = "/uploads/" + filename;
-        return ResponseEntity.ok(Map.of("url", fileUrl));
+        return ResponseEntity.ok(Map.of("url", secureUrl));
     }
 }
