@@ -30,7 +30,7 @@ services:
       - key: SPRING_MAIL_STARTTLS_REQUIRED
         value: "true"
       - key: CORS_ALLOWED_ORIGINS
-        sync: false   # Set to your deployed frontend URL(s), e.g.: https://codestorm.onrender.com
+        value: "https://codestorm-backend-4i2q.onrender.com"
       - key: UPLOAD_DIR
         value: "/app/uploads"
     healthCheckPath: /api/auth/health
