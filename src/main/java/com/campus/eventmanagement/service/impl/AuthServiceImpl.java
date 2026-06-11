@@ -12,8 +12,11 @@ import com.campus.eventmanagement.service.AuthService;
 import com.campus.eventmanagement.util.JwtTokenProvider;
 
 import jakarta.annotation.PostConstruct;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +31,9 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
     private final OtpVerificationRepository otpVerificationRepository;
     private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.username:noreply@codestorm.app}")
+    private String senderEmail;
 
     public AuthServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
@@ -68,7 +74,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String otp = String.format("%06d", new Random().nextInt(1000000));
-        
+
+        // Upsert: delete any existing OTP for this email first to avoid duplicate key issues
+        otpVerificationRepository.findById(email).ifPresent(otpVerificationRepository::delete);
+
         OtpVerification verification = OtpVerification.builder()
                 .email(email)
                 .otp(otp)
@@ -76,22 +85,80 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         otpVerificationRepository.save(verification);
 
-        System.out.println("==================================================");
-        System.out.println("OTP Verification Code for " + email + ": " + otp);
-        System.out.println("==================================================");
+        System.out.println("==========================================");
+        System.out.println("OTP for " + email + ": " + otp);
+        System.out.println("==========================================");
 
         try {
-            if (mailSender != null) {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setTo(email);
-                message.setSubject("CodeStorm Signup OTP Verification");
-                message.setText("Your verification code is: " + otp + "\nThis code will expire in 5 minutes.");
-                mailSender.send(message);
-            }
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(senderEmail, "CodeStorm – Event Management");
+            helper.setTo(email);
+            helper.setSubject("\uD83D\uDD10 Your CodeStorm Registration OTP");
+            helper.setText(buildOtpEmailHtml(email, otp), true);
+            mailSender.send(mimeMessage);
+            System.out.println("OTP email sent successfully to: " + email);
         } catch (Exception e) {
-            System.err.println("Failed to send OTP email: " + e.getMessage());
+            System.err.println("Failed to send OTP email to " + email + ": " + e.getMessage());
+            // OTP is already saved — user can still verify if they see server logs,
+            // but in production this indicates misconfigured mail credentials.
+            throw new RuntimeException("Failed to send OTP email. Please check your email address and try again.");
         }
     }
+
+    private String buildOtpEmailHtml(String email, String otp) {
+        return "<!DOCTYPE html>\n" +
+               "<html lang='en'>\n" +
+               "<head>\n" +
+               "  <meta charset='UTF-8'>\n" +
+               "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n" +
+               "  <title>CodeStorm OTP Verification</title>\n" +
+               "</head>\n" +
+               "<body style='margin:0;padding:0;font-family:Segoe UI,Arial,sans-serif;background:#0f172a;'>\n" +
+               "  <table width='100%' cellpadding='0' cellspacing='0' style='background:#0f172a;padding:40px 0;'>\n" +
+               "    <tr><td align='center'>\n" +
+               "      <table width='560' cellpadding='0' cellspacing='0' style='background:#1e293b;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);'>\n" +
+               "        <!-- Header -->\n" +
+               "        <tr><td style='background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);padding:36px 40px;text-align:center;'>\n" +
+               "          <h1 style='color:#ffffff;margin:0;font-size:28px;font-weight:700;letter-spacing:-0.5px;'>\uD83C\uDF29\uFE0F CodeStorm</h1>\n" +
+               "          <p style='color:#c4b5fd;margin:8px 0 0;font-size:14px;'>Campus Event Management Platform</p>\n" +
+               "        </td></tr>\n" +
+               "        <!-- Body -->\n" +
+               "        <tr><td style='padding:40px;'>\n" +
+               "          <h2 style='color:#f1f5f9;margin:0 0 12px;font-size:20px;'>Verify Your Registration</h2>\n" +
+               "          <p style='color:#94a3b8;font-size:15px;line-height:1.6;margin:0 0 28px;'>\n" +
+               "            You're one step away from joining CodeStorm! Use the verification code below to complete your account registration at <strong style='color:#a5b4fc;'>" + email + "</strong>.\n" +
+               "          </p>\n" +
+               "          <!-- OTP Box -->\n" +
+               "          <div style='background:#0f172a;border:2px solid #6366f1;border-radius:12px;padding:28px;text-align:center;margin:0 0 28px;'>\n" +
+               "            <p style='color:#94a3b8;font-size:13px;margin:0 0 12px;text-transform:uppercase;letter-spacing:2px;'>Your Verification Code</p>\n" +
+               "            <p style='color:#ffffff;font-size:42px;font-weight:700;letter-spacing:12px;margin:0;font-family:monospace;'>" + otp + "</p>\n" +
+               "            <p style='color:#64748b;font-size:12px;margin:16px 0 0;'>\u23F1\uFE0F Expires in <strong style='color:#f59e0b;'>5 minutes</strong></p>\n" +
+               "          </div>\n" +
+               "          <!-- Steps -->\n" +
+               "          <p style='color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 8px;'>\uD83D\uDCCB <strong style='color:#e2e8f0;'>How to use:</strong></p>\n" +
+               "          <ol style='color:#94a3b8;font-size:14px;line-height:2;margin:0 0 28px;padding-left:20px;'>\n" +
+               "            <li>Return to the CodeStorm signup page.</li>\n" +
+               "            <li>Enter the 6-digit code above in the OTP field.</li>\n" +
+               "            <li>Complete your profile and start exploring events!</li>\n" +
+               "          </ol>\n" +
+               "          <!-- Security notice -->\n" +
+               "          <div style='background:#1e3a5f;border-left:4px solid #3b82f6;border-radius:4px;padding:14px 18px;'>\n" +
+               "            <p style='color:#93c5fd;font-size:13px;margin:0;'>\uD83D\uDD12 <strong>Security Notice:</strong> If you did not request this code, please ignore this email. Do not share this OTP with anyone.</p>\n" +
+               "          </div>\n" +
+               "        </td></tr>\n" +
+               "        <!-- Footer -->\n" +
+               "        <tr><td style='background:#0f172a;padding:24px 40px;text-align:center;border-top:1px solid #334155;'>\n" +
+               "          <p style='color:#475569;font-size:12px;margin:0;'>This email was sent to " + email + " because a registration was initiated on CodeStorm.</p>\n" +
+               "          <p style='color:#334155;font-size:11px;margin:8px 0 0;'>\u00A9 2025 CodeStorm · Campus Event Management</p>\n" +
+               "        </td></tr>\n" +
+               "      </table>\n" +
+               "    </td></tr>\n" +
+               "  </table>\n" +
+               "</body>\n" +
+               "</html>";
+    }
+
 
     @Override
     public AuthResponse signup(SignupRequest request) {
@@ -169,16 +236,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseGet(() -> userRepository.findByTeamName(request.getEmail())
-                        .orElseThrow(() -> new RuntimeException(
-                                "User not found with email or team name: "
-                                        + request.getEmail())));
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email or team name is required!");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("Password is required!");
+        }
 
-        if (!passwordEncoder.matches(
-                request.getPassword(),
-                user.getPassword())) {
-            throw new RuntimeException("Invalid password!");
+        User user = userRepository.findByEmail(request.getEmail().trim())
+                .orElseGet(() -> userRepository.findByTeamName(request.getEmail().trim())
+                        .orElseThrow(() -> new RuntimeException(
+                                "No account found with that email or team name. Please sign up first.")));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Incorrect password. Please try again.");
         }
 
         String token = tokenProvider.generateToken(
