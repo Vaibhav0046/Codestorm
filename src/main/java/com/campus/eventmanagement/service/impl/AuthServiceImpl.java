@@ -92,17 +92,27 @@ public class AuthServiceImpl implements AuthService {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            helper.setFrom(senderEmail, "CodeStorm – Event Management");
+            // Use ASCII-safe from address to avoid encoding issues across all SMTP servers
+            helper.setFrom(new jakarta.mail.internet.InternetAddress(senderEmail, "CodeStorm Event Management", "UTF-8"));
             helper.setTo(email);
-            helper.setSubject("\uD83D\uDD10 Your CodeStorm Registration OTP");
+            helper.setSubject("[CodeStorm] Your Registration OTP Verification Code");
             helper.setText(buildOtpEmailHtml(email, otp), true);
             mailSender.send(mimeMessage);
             System.out.println("OTP email sent successfully to: " + email);
         } catch (Exception e) {
-            System.err.println("Failed to send OTP email to " + email + ": " + e.getMessage());
-            // OTP is already saved — user can still verify if they see server logs,
-            // but in production this indicates misconfigured mail credentials.
-            throw new RuntimeException("Failed to send OTP email. Please check your email address and try again.");
+            // Log full exception chain so the real cause is visible in Render logs
+            System.err.println("==== OTP EMAIL SEND FAILURE ====");
+            System.err.println("To: " + email);
+            System.err.println("Error type: " + e.getClass().getName());
+            System.err.println("Error message: " + e.getMessage());
+            if (e.getCause() != null) {
+                System.err.println("Caused by: " + e.getCause().getClass().getName() + " - " + e.getCause().getMessage());
+            }
+            if (e.getCause() != null && e.getCause().getCause() != null) {
+                System.err.println("Root cause: " + e.getCause().getCause().getClass().getName() + " - " + e.getCause().getCause().getMessage());
+            }
+            System.err.println("================================");
+            throw new RuntimeException("Failed to send OTP email: " + e.getMessage());
         }
     }
 
