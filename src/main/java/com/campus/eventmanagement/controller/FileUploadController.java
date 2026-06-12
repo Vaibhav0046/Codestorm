@@ -43,14 +43,13 @@ public class FileUploadController {
             return ResponseEntity.badRequest().body(Map.of("error", "Only image files are allowed"));
         }
 
-        // Upload to Cloudinary — persistent, CDN-backed, survives redeployments
+        // Upload to Cloudinary without invalid transformation parameters to avoid errors
         @SuppressWarnings("unchecked")
         Map<String, Object> uploadResult = cloudinary.uploader().upload(
             file.getBytes(),
             ObjectUtils.asMap(
-                "folder",          "codestorm",
-                "resource_type",   "image",
-                "transformation",  ObjectUtils.asMap("quality", "auto", "fetch_format", "auto")
+                "folder",        "codestorm",
+                "resource_type", "image"
             )
         );
 

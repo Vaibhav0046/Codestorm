@@ -14,6 +14,7 @@ export default function AdminEvents() {
     labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5,
     timetablePdf: '', extraInfo: '', upiId: '', paymentQr: ''
   });
+  const [selectedQrFile, setSelectedQrFile] = useState(null);
 
   const fetchEvents = async () => {
     try {
@@ -62,6 +63,7 @@ export default function AdminEvents() {
       alert('File size exceeds the 50MB capacity limit.');
       return;
     }
+    setSelectedQrFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData(prev => ({ ...prev, paymentQr: reader.result }));
@@ -75,6 +77,7 @@ export default function AdminEvents() {
       name: '', description: '', type: 'TEAM', minTeamSize: 2, maxTeamSize: 4, date: '', venue: '', active: true,
       labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5, timetablePdf: '', extraInfo: '', upiId: '', paymentQr: ''
     });
+    setSelectedQrFile(null);
     setShowModal(true);
   };
 
@@ -92,19 +95,30 @@ export default function AdminEvents() {
       upiId: event.upiId || '',
       paymentQr: event.paymentQr || ''
     });
+    setSelectedQrFile(null);
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      let updatedFormData = { ...formData };
+      if (selectedQrFile) {
+        const uploadForm = new FormData();
+        uploadForm.append('file', selectedQrFile);
+        const uploadRes = await api.post('/api/upload', uploadForm, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        updatedFormData.paymentQr = uploadRes.data.url;
+      }
       if (editMode) {
-        await api.put(`/api/events/${selectedId}`, formData);
+        await api.put(`/api/events/${selectedId}`, updatedFormData);
         alert('Event updated successfully!');
       } else {
-        await api.post('/api/events', formData);
+        await api.post('/api/events', updatedFormData);
         alert('Event created successfully!');
       }
+      setSelectedQrFile(null);
       setShowModal(false);
       fetchEvents();
     } catch (err) {
@@ -320,7 +334,10 @@ export default function AdminEvents() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, paymentQr: '' }))}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, paymentQr: '' }));
+                          setSelectedQrFile(null);
+                        }}
                         className="text-[8px] bg-red-500/20 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded hover:bg-red-500 hover:text-white transition-all cursor-pointer font-bold uppercase"
                       >
                         Delete

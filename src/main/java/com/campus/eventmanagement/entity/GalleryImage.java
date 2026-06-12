@@ -18,7 +18,7 @@ public class GalleryImage {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String imageUrl;
 
     private LocalDate uploadedDate;
