@@ -41,14 +41,20 @@ public class ReportServiceImpl implements ReportService {
         StringBuilder csv = new StringBuilder();
         
         // CSV Header
-        csv.append("Registration ID,Event Name,Registered Account,Team Name,Registration Date,Status,Certificate Code,Participant Name,Participant Email,Phone,T-Shirt Size,Food Preference,College,Lab Allotment\n");
+        csv.append("Registration ID,Event Name,Domain,Registered Account,Team Name,Registration Date,Status,Certificate Code,Participant Name,Participant Email,Phone,T-Shirt Size,Food Preference,College,Lab Allotment\n");
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         for (Registration r : registrations) {
-            String base = String.format("%d,%s,%s,%s,%s,%s,%s",
+            // Save only the approved team details, not the rejected/pending members
+            if (r.getStatus() != com.campus.eventmanagement.enums.RegistrationStatus.APPROVED) {
+                continue;
+            }
+            
+            String base = String.format("%d,%s,%s,%s,%s,%s,%s,%s",
                     r.getId(),
                     escapeCsv(r.getEvent().getName()),
+                    escapeCsv(r.getDomain() != null ? r.getDomain() : "N/A"),
                     escapeCsv(r.getUser().getEmail()),
                     escapeCsv(r.getTeamName()),
                     r.getRegistrationDate().format(dtf),
@@ -635,6 +641,100 @@ public class ReportServiceImpl implements ReportService {
         footerTable.addCell(c2);
 
         document.add(footerTable);
+        document.close();
+
+        return out.toByteArray();
+    }
+
+    @Override
+    public byte[] generatePreviousRegistrationsCsv(List<com.campus.eventmanagement.entity.PreviousRegistration> list) {
+        StringBuilder csv = new StringBuilder();
+        // CSV Header
+        csv.append("Event Name,Domain,Team Name,College,Participant Name,Email,Phone,T-Shirt Size,Food Preference,Status,Registration Date\n");
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        for (com.campus.eventmanagement.entity.PreviousRegistration p : list) {
+            // Save only the approved team details, not the rejected/pending members
+            if (!"APPROVED".equals(p.getStatus())) {
+                continue;
+            }
+            csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                    escapeCsv(p.getEventName()),
+                    escapeCsv(p.getDomain() != null ? p.getDomain() : "N/A"),
+                    escapeCsv(p.getTeamName()),
+                    escapeCsv(p.getCollege()),
+                    escapeCsv(p.getParticipantName()),
+                    escapeCsv(p.getEmail()),
+                    escapeCsv(p.getPhone()),
+                    escapeCsv(p.getTshirtSize()),
+                    escapeCsv(p.getFoodPreference()),
+                    escapeCsv(p.getStatus()),
+                    p.getRegistrationDate() != null ? p.getRegistrationDate().format(dtf) : "N/A"
+            ));
+        }
+
+        return csv.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public byte[] generatePreviousRegistrationsPdf(List<com.campus.eventmanagement.entity.PreviousRegistration> list) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // Landscape A4 document layout to fit 9 detailed columns beautifully
+        Document document = new Document(PageSize.A4.rotate(), 20, 20, 40, 20);
+        PdfWriter writer = PdfWriter.getInstance(document, out);
+        document.open();
+
+        // Title
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, new Color(26, 54, 93));
+        Paragraph title = new Paragraph("Campus Event Historical Registrations Ledger Report", titleFont);
+        title.setAlignment(Element.ALIGN_CENTER);
+        title.setSpacingAfter(10);
+        document.add(title);
+
+        // Subtitle
+        Font subtitleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.GRAY);
+        Paragraph subtitle = new Paragraph("Generated on: " + java.time.LocalDateTime.now().toString() + " | Entries count: " + list.size(), subtitleFont);
+        subtitle.setAlignment(Element.ALIGN_CENTER);
+        subtitle.setSpacingAfter(15);
+        document.add(subtitle);
+
+        // 9 Detailed Columns Table
+        PdfPTable table = new PdfPTable(9);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{1.5f, 2.0f, 2.0f, 2.0f, 2.5f, 1.8f, 1.0f, 1.0f, 1.2f});
+
+        // Headers
+        Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
+        String[] headers = {"Domain", "Team Name", "College", "Participant", "Email", "Phone", "T-Shirt", "Food", "Status"};
+        for (String header : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(header, headFont));
+            cell.setBackgroundColor(new Color(26, 54, 93)); // Premium Navy
+            cell.setPadding(6);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+        }
+
+        // Data Rows
+        Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.DARK_GRAY);
+
+        for (com.campus.eventmanagement.entity.PreviousRegistration p : list) {
+            // Save only the approved team details, not the rejected/pending members
+            if (!"APPROVED".equals(p.getStatus())) {
+                continue;
+            }
+            table.addCell(createCell(p.getDomain() != null ? p.getDomain() : "N/A", dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getTeamName(), dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getCollege(), dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getParticipantName(), dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getEmail(), dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getPhone(), dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getTshirtSize(), dataFont, Element.ALIGN_CENTER));
+            table.addCell(createCell(p.getFoodPreference(), dataFont, Element.ALIGN_CENTER));
+            table.addCell(createCell(p.getStatus(), dataFont, Element.ALIGN_CENTER));
+        }
+
+        document.add(table);
         document.close();
 
         return out.toByteArray();

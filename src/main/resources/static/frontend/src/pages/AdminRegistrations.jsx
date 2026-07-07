@@ -153,8 +153,8 @@ export default function AdminRegistrations() {
         return new Date(a.registrationDate) - new Date(b.registrationDate);
       }
       if (sortBy === 'COLLEGE_ASC') {
-        const colA = a.participants[0]?.college || a.user.college || '';
-        const colB = b.participants[0]?.college || b.user.college || '';
+        const colA = (a.participants[0]?.college || a.user.college || '').trim().toLowerCase();
+        const colB = (b.participants[0]?.college || b.user.college || '').trim().toLowerCase();
         return colA.localeCompare(colB);
       }
       if (sortBy === 'TEAM_SIZE_DESC') {
@@ -346,6 +346,11 @@ export default function AdminRegistrations() {
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-200 font-heading">
                       <div>{reg.event.name}</div>
+                      {reg.domain && (
+                        <div className="text-[9px] text-sky-400 font-bold uppercase tracking-wider mt-0.5">
+                          Track: {reg.domain}
+                        </div>
+                      )}
                       {reg.labAllotment && (
                         <div className="text-[10px] text-amber-400 font-extrabold flex items-center mt-1">
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 animate-pulse"></span>

@@ -14,7 +14,9 @@ import {
   Image,
   Settings,
   Trophy,
-  Users
+  Users,
+  GitCommit,
+  HelpCircle
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -71,6 +73,16 @@ export const Sidebar = ({ isOpen, toggleSidebar }) => {
               <span className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>Guests Manager</span>
             </NavLink>
 
+            <NavLink to="/admin/evaluation" className={linkClass}>
+              <GitCommit className="w-5 h-5 flex-shrink-0" />
+              <span className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>Timeline Stages</span>
+            </NavLink>
+
+            <NavLink to="/admin/coordinators" className={linkClass}>
+              <Users className="w-5 h-5 flex-shrink-0" />
+              <span className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>Coordinators</span>
+            </NavLink>
+
             <NavLink to="/profile" className={linkClass}>
               <Settings className="w-5 h-5 flex-shrink-0" />
               <span className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>Profile Settings</span>
@@ -103,6 +115,11 @@ export const Sidebar = ({ isOpen, toggleSidebar }) => {
             <NavLink to="/profile" className={linkClass}>
               <Settings className="w-5 h-5 flex-shrink-0" />
               <span className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>Profile Settings</span>
+            </NavLink>
+
+            <NavLink to="/support" className={linkClass}>
+              <HelpCircle className="w-5 h-5 flex-shrink-0 text-sky-400" />
+              <span className={`transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>Help Desk</span>
             </NavLink>
           </>
         )}

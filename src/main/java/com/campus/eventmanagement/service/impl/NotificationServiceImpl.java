@@ -73,6 +73,11 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.findAll();
     }
 
+    @Override
+    public void deleteNotification(Long id) {
+        notificationRepository.deleteById(id);
+    }
+
     private void pushWsNotification(Notification note) {
         String json = String.format(
                 "{\"id\":%d,\"message\":\"%s\",\"type\":\"%s\",\"createdAt\":\"%s\",\"recipientEmail\":\"%s\"}",

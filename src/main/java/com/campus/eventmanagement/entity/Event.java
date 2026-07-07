@@ -53,4 +53,8 @@ public class Event {
     private String paymentQr;
 
     private String upiId;
+
+    private String helpDeskDetails;
+
+    private String domains;
 }

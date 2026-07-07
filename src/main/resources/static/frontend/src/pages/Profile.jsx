@@ -238,62 +238,64 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Change Password Block */}
-            <div className="border-t border-white/5 pt-4 space-y-4">
-              <div className="flex items-center space-x-3 bg-slate-950/40 p-3 rounded-xl border border-white/5">
-                <input
-                  type="checkbox"
-                  id="changePassword"
-                  checked={changePassword}
-                  onChange={(e) => setChangePassword(e.target.checked)}
-                  className="accent-sky-500 cursor-pointer"
-                />
-                <label
-                  htmlFor="changePassword"
-                  className="text-[10px] font-bold uppercase text-slate-300 tracking-widest font-heading cursor-pointer"
-                >
-                  Enable Password Change
-                </label>
-              </div>
-
-              {changePassword && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-white/5 animate-fade-in">
-                  <div>
-                    <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="••••••••"
-                        className="w-full bg-slate-950 border border-white/5 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        placeholder="••••••••"
-                        className="w-full bg-slate-950 border border-white/5 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
-                      />
-                    </div>
-                  </div>
+            {/* Change Password Block (Admins only) */}
+            {user?.role !== 'ROLE_USER' && (
+              <div className="border-t border-white/5 pt-4 space-y-4">
+                <div className="flex items-center space-x-3 bg-slate-950/40 p-3 rounded-xl border border-white/5">
+                  <input
+                    type="checkbox"
+                    id="changePassword"
+                    checked={changePassword}
+                    onChange={(e) => setChangePassword(e.target.checked)}
+                    className="accent-sky-500 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="changePassword"
+                    className="text-[10px] font-bold uppercase text-slate-300 tracking-widest font-heading cursor-pointer"
+                  >
+                    Enable Password Change
+                  </label>
                 </div>
-              )}
-            </div>
+
+                {changePassword && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-white/5 animate-fade-in">
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="••••••••"
+                          className="w-full bg-slate-950 border border-white/5 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="••••••••"
+                          className="w-full bg-slate-950 border border-white/5 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               type="submit"

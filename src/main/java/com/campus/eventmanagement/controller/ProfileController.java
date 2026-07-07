@@ -41,9 +41,13 @@ public class ProfileController {
         user.setCollege(userDetails.getCollege());
         user.setPhone(userDetails.getPhone());
         
-        // If they provided a new password, encode it and update
+        // If they provided a new password, encode it and update (only for admins)
         if (userDetails.getPassword() != null && !userDetails.getPassword().trim().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+            if (user.getRole() == com.campus.eventmanagement.enums.Role.ROLE_ADMIN) {
+                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+            } else {
+                throw new RuntimeException("Participants are not allowed to change their password via Profile Settings. Please use the Forgot Password flow during login.");
+            }
         }
 
         User savedUser = userRepository.save(user);

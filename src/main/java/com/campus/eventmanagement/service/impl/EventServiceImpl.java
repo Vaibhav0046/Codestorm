@@ -3,19 +3,31 @@ package com.campus.eventmanagement.service.impl;
 import com.campus.eventmanagement.entity.Event;
 import com.campus.eventmanagement.enums.EventType;
 import com.campus.eventmanagement.repository.EventRepository;
+import com.campus.eventmanagement.repository.RegistrationRepository;
+import com.campus.eventmanagement.repository.PreviousRegistrationRepository;
+import com.campus.eventmanagement.entity.Registration;
+import com.campus.eventmanagement.entity.Participant;
+import com.campus.eventmanagement.entity.PreviousRegistration;
 import com.campus.eventmanagement.service.EventService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
+    private final RegistrationRepository registrationRepository;
+    private final PreviousRegistrationRepository previousRegistrationRepository;
 
-    public EventServiceImpl(EventRepository eventRepository) {
+    public EventServiceImpl(EventRepository eventRepository,
+                            RegistrationRepository registrationRepository,
+                            PreviousRegistrationRepository previousRegistrationRepository) {
         this.eventRepository = eventRepository;
+        this.registrationRepository = registrationRepository;
+        this.previousRegistrationRepository = previousRegistrationRepository;
     }
 
     @PostConstruct
@@ -34,6 +46,8 @@ public class EventServiceImpl implements EventService {
             event1.setVenue("Main Auditorium");
             event1.setActive(true);
             event1.setUpiId("7569059847@ybl");
+            event1.setDomains("AI & ML, Cybersecurity, IoT & Embedded, Blockchain");
+            event1.setHelpDeskDetails("Coordinator: Dr. A. Prasad (9848012345)");
             eventRepository.save(event1);
 
             Event event2 = new Event();
@@ -58,6 +72,8 @@ public class EventServiceImpl implements EventService {
             event3.setVenue("Innovation Hall");
             event3.setActive(true);
             event3.setUpiId("7569059847@ybl");
+            event3.setDomains("Web/App Dev, Hardware Prototype, Cloud & DevOps, AR/VR");
+            event3.setHelpDeskDetails("Coordinator: Prof. S. Ramesh (9848054321)");
             eventRepository.save(event3);
 
             Event event4 = new Event();
@@ -70,6 +86,8 @@ public class EventServiceImpl implements EventService {
             event4.setVenue("E-Learning Lab");
             event4.setActive(true);
             event4.setUpiId("7569059847@ybl");
+            event4.setDomains("Fintech, Edtech, Agritech, Healthcare & Assistive");
+            event4.setHelpDeskDetails("Coordinator: Dr. V. Srinivas (9988776655)");
             eventRepository.save(event4);
 
             Event event5 = new Event();
@@ -112,6 +130,13 @@ public class EventServiceImpl implements EventService {
     @Override
     public Event updateEvent(Long id, Event eventDetails) {
         Event event = getEventById(id);
+        
+        // If inactivating the event, remove all its registrations
+        if (!eventDetails.isActive() && event.isActive()) {
+            List<Registration> regs = registrationRepository.findByEventId(id);
+            registrationRepository.deleteAll(regs);
+        }
+
         event.setName(eventDetails.getName());
         event.setDescription(eventDetails.getDescription());
         event.setType(eventDetails.getType());
@@ -126,12 +151,51 @@ public class EventServiceImpl implements EventService {
         event.setExtraInfo(eventDetails.getExtraInfo());
         event.setPaymentQr(eventDetails.getPaymentQr());
         event.setUpiId(eventDetails.getUpiId());
+        event.setHelpDeskDetails(eventDetails.getHelpDeskDetails());
+        event.setDomains(eventDetails.getDomains());
         return eventRepository.save(event);
     }
 
     @Override
     public void deleteEvent(Long id) {
         Event event = getEventById(id);
+        List<Registration> regs = registrationRepository.findByEventId(id);
+        for (Registration r : regs) {
+            if (r.getParticipants() == null || r.getParticipants().isEmpty()) {
+                PreviousRegistration prev = PreviousRegistration.builder()
+                        .eventName(event.getName())
+                        .teamName(r.getTeamName())
+                        .college(r.getUser() != null ? r.getUser().getCollege() : "")
+                        .participantName(r.getTeamName())
+                        .email(r.getUser() != null ? r.getUser().getEmail() : "")
+                        .phone(r.getUser() != null ? r.getUser().getPhone() : "")
+                        .tshirtSize("L")
+                        .foodPreference("VEG")
+                        .status(r.getStatus().name())
+                        .registrationDate(r.getRegistrationDate())
+                        .domain(r.getDomain())
+                        .build();
+                previousRegistrationRepository.save(prev);
+            } else {
+                for (Participant p : r.getParticipants()) {
+                    PreviousRegistration prev = PreviousRegistration.builder()
+                            .eventName(event.getName())
+                            .teamName(r.getTeamName())
+                            .college(p.getCollege())
+                            .participantName(p.getName())
+                            .email(p.getEmail())
+                            .phone(p.getPhone())
+                            .tshirtSize(p.getTshirtSize() != null ? p.getTshirtSize().name() : "L")
+                            .foodPreference(p.getFoodPreference() != null ? p.getFoodPreference().name() : "VEG")
+                            .status(r.getStatus().name())
+                            .registrationDate(r.getRegistrationDate())
+                            .domain(r.getDomain())
+                            .build();
+                    previousRegistrationRepository.save(prev);
+                }
+            }
+        }
+        registrationRepository.deleteAll(regs);
         eventRepository.delete(event);
     }
 }

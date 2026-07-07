@@ -8,4 +8,6 @@ public interface ReportService {
     byte[] generateRegistrationsPdf(java.util.List<Long> ids);
     byte[] generateCertificatePdf(Registration registration);
     byte[] generateGuidelinesPdf(String track);
+    byte[] generatePreviousRegistrationsCsv(java.util.List<com.campus.eventmanagement.entity.PreviousRegistration> list);
+    byte[] generatePreviousRegistrationsPdf(java.util.List<com.campus.eventmanagement.entity.PreviousRegistration> list);
 }

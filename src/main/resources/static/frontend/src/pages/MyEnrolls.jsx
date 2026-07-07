@@ -201,6 +201,11 @@ export default function MyEnrolls() {
                               <span>📅 View Schedule (PDF)</span>
                             </button>
                           )}
+                          {reg.event.helpDeskDetails && (
+                            <div className="text-[9px] text-slate-500 font-semibold mt-1">
+                              📞 {reg.event.helpDeskDetails}
+                            </div>
+                          )}
                         </td>
                         <td className="py-4 px-2 text-slate-400">
                           <div>{reg.event.venue}</div>

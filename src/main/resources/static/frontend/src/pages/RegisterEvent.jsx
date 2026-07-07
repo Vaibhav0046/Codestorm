@@ -15,6 +15,7 @@ export default function RegisterEvent() {
   const [submitting, setSubmitting] = useState(false);
   const [teamName, setTeamName] = useState(user?.teamName || '');
   const [participants, setParticipants] = useState([]);
+  const [domain, setDomain] = useState('');
   
   // Payment Details State
   const [utrNumber, setUtrNumber] = useState('');
@@ -114,7 +115,8 @@ export default function RegisterEvent() {
         teamName: event.maxTeamSize > 1 ? teamName : user?.teamName || 'Individual',
         participants: participants,
         paymentScreenshot: screenshotFile,
-        utrNumber: utrNumber
+        utrNumber: utrNumber,
+        domain: domain
       });
       alert('Registration submitted successfully! Pending administrator approval.');
       navigate('/registrations'); // Route modified to registrations
@@ -133,6 +135,10 @@ export default function RegisterEvent() {
       <Link to="/events" className="text-sky-400 font-extrabold hover:underline text-xs uppercase tracking-wider">Back to Catalog</Link>
     </div>
   );
+
+  const domainsList = event?.domains
+    ? event.domains.split(',').map(d => d.trim()).filter(d => d.length > 0)
+    : [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -293,6 +299,26 @@ export default function RegisterEvent() {
                         <option value="NON_VEG" className="bg-slate-950">Non-Vegetarian (NON-VEG)</option>
                       </select>
                     </div>
+
+                    {index === 0 && domainsList.length > 0 && (
+                      <div className="md:col-span-2 bg-sky-500/5 p-4 rounded-xl border border-sky-500/10 space-y-2 mt-2">
+                        <label className="block text-[9px] font-black uppercase text-sky-400 tracking-widest font-heading">
+                          🎯 Challenge Track Domain Selection
+                        </label>
+                        <select 
+                          required
+                          value={domain} 
+                          onChange={(e) => setDomain(e.target.value)}
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs focus:outline-none font-extrabold text-sky-300 font-sans"
+                        >
+                          <option value="" className="bg-slate-950 text-slate-400">-- Choose Domain Track --</option>
+                          {domainsList.map(d => (
+                            <option key={d} value={d} className="bg-slate-950 text-slate-200">{d}</option>
+                          ))}
+                        </select>
+                        <p className="text-[9px] text-slate-500 font-medium">Domain track can only be chosen by the Squad Leader and applies to the entire team.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -88,4 +88,25 @@ public class AuthController {
         }
         return response;
     }
+
+    @PostMapping("/forgot-password/send-otp")
+    public Map<String, String> forgotPasswordSendOtp(@RequestParam String email) {
+        authService.sendForgotPasswordOtp(email);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Forgot password OTP sent successfully!");
+        return response;
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public Map<String, String> forgotPasswordReset(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String otp = payload.get("otp");
+        String newPassword = payload.get("newPassword");
+        
+        authService.resetPassword(email, otp, newPassword);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Password reset completed successfully!");
+        return response;
+    }
 }

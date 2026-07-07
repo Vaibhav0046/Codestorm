@@ -12,9 +12,11 @@ export default function AdminEvents() {
     name: '', description: '', type: 'TEAM',
     minTeamSize: 2, maxTeamSize: 4, date: '', venue: '', active: true,
     labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5,
-    timetablePdf: '', extraInfo: '', upiId: '', paymentQr: ''
+    timetablePdf: '', extraInfo: '', upiId: '', paymentQr: '',
+    helpDeskDetails: '', domains: ''
   });
   const [selectedQrFile, setSelectedQrFile] = useState(null);
+  const [previousEventNames, setPreviousEventNames] = useState([]);
 
   const fetchEvents = async () => {
     try {
@@ -27,7 +29,33 @@ export default function AdminEvents() {
     }
   };
 
-  useEffect(() => { fetchEvents(); }, []);
+  const fetchPreviousEventNames = async () => {
+    try {
+      const res = await api.get('/api/events/previous-registrations/names');
+      setPreviousEventNames(res.data);
+    } catch (err) {
+      console.error('Error fetching previous event names:', err);
+    }
+  };
+
+  useEffect(() => { 
+    fetchEvents();
+    fetchPreviousEventNames();
+  }, []);
+
+  const downloadPreviousReport = (eventName, type) => {
+    const format = type === 'excel' ? 'excel' : 'pdf';
+    const ext = type === 'excel' ? 'csv' : 'pdf';
+    const mime = type === 'excel' ? 'text/csv' : 'application/pdf';
+    
+    api.get(`/api/events/previous-registrations/report/${format}?eventName=${encodeURIComponent(eventName)}`, { responseType: 'blob' }).then(res => {
+      const blob = new Blob([res.data], { type: mime });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `previous_registrations_${eventName.replace(/\s+/g, '_')}_report.${ext}`;
+      link.click();
+    }).catch(() => alert('Failed to download previous registrations report.'));
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -75,7 +103,8 @@ export default function AdminEvents() {
     setEditMode(false);
     setFormData({ 
       name: '', description: '', type: 'TEAM', minTeamSize: 2, maxTeamSize: 4, date: '', venue: '', active: true,
-      labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5, timetablePdf: '', extraInfo: '', upiId: '', paymentQr: ''
+      labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5, timetablePdf: '', extraInfo: '', upiId: '', paymentQr: '',
+      helpDeskDetails: '', domains: ''
     });
     setSelectedQrFile(null);
     setShowModal(true);
@@ -93,7 +122,9 @@ export default function AdminEvents() {
       timetablePdf: event.timetablePdf || '',
       extraInfo: event.extraInfo || '',
       upiId: event.upiId || '',
-      paymentQr: event.paymentQr || ''
+      paymentQr: event.paymentQr || '',
+      helpDeskDetails: event.helpDeskDetails || '',
+      domains: event.domains || ''
     });
     setSelectedQrFile(null);
     setShowModal(true);
@@ -193,6 +224,26 @@ export default function AdminEvents() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right flex items-center justify-end space-x-2.5">
+                    {previousEventNames.includes(event.name) && (
+                      <div className="flex space-x-1 items-center bg-slate-950/60 border border-white/5 px-2 py-1 rounded-lg mr-1.5">
+                        <span className="text-[9px] text-slate-500 font-bold mr-1">HIST:</span>
+                        <button
+                          onClick={() => downloadPreviousReport(event.name, 'excel')}
+                          className="text-[9px] font-black text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider cursor-pointer"
+                          title="Download Historical Excel/CSV"
+                        >
+                          CSV
+                        </button>
+                        <span className="text-slate-800 text-[9px] mx-0.5">|</span>
+                        <button
+                          onClick={() => downloadPreviousReport(event.name, 'pdf')}
+                          className="text-[9px] font-black text-sky-400 hover:text-sky-300 transition-colors uppercase tracking-wider cursor-pointer"
+                          title="Download Historical PDF"
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    )}
                     <button onClick={() => handleOpenEdit(event)}
                       className="p-2 rounded-lg border border-white/5 bg-slate-950/60 text-slate-400 hover:text-sky-400 hover:border-sky-500/20 hover:bg-slate-950 transition-all cursor-pointer">
                       <Pencil className="w-3.5 h-3.5" />
@@ -315,6 +366,21 @@ export default function AdminEvents() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Help Desk / Coordinator Details</label>
+                  <input type="text" name="helpDeskDetails" value={formData.helpDeskDetails} onChange={handleChange}
+                    placeholder="e.g. Coordinator: Dr. V. Srinivas (9988776655)"
+                    className="w-full glass-input rounded-xl px-4 py-2.5 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Domain Configurations (comma-separated)</label>
+                  <input type="text" name="domains" value={formData.domains} onChange={handleChange}
+                    placeholder="e.g. Web Dev, App Dev, Cloud Architecture"
+                    className="w-full glass-input rounded-xl px-4 py-2.5 focus:outline-none" />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-xl border border-white/5 shadow-inner">
                 <div>
                   <label className="block text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event UPI ID</label>
@@ -361,6 +427,50 @@ export default function AdminEvents() {
                 {editMode ? 'Save Event Configuration' : 'Establish New Symposium Event'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Historical Archived Registrations (Deleted Events) */}
+      {previousEventNames.length > 0 && (
+        <div className="glass-effect rounded-2xl border border-white/5 p-6 space-y-4 shadow-xl mt-8">
+          <div>
+            <h2 className="text-base font-bold text-white flex items-center space-x-2 font-heading">
+              <span>Historical Archived Registrations (Deleted/Archived Events)</span>
+            </h2>
+            <p className="text-[10px] text-slate-400 mt-1">
+              Historical registrations preserved from deleted events. These reports can be downloaded at any time.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+            {previousEventNames.map((name) => (
+              <div 
+                key={name}
+                className="p-4 rounded-xl bg-slate-950/40 border border-white/5 flex items-center justify-between space-x-4 hover:border-slate-800/80 hover:bg-slate-950/60 transition-all"
+              >
+                <div>
+                  <h3 className="text-xs font-bold text-slate-200 truncate max-w-[150px]" title={name}>{name}</h3>
+                  <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider block mt-0.5">ARCHIVED</span>
+                </div>
+                <div className="flex space-x-1.5 items-center">
+                  <button
+                    onClick={() => downloadPreviousReport(name, 'excel')}
+                    className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    title="Download Excel Report"
+                  >
+                    Excel
+                  </button>
+                  <button
+                    onClick={() => downloadPreviousReport(name, 'pdf')}
+                    className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    title="Download PDF Report"
+                  >
+                    PDF
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

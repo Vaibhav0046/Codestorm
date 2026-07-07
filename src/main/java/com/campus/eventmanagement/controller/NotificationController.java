@@ -36,4 +36,10 @@ public class NotificationController {
         checkAdmin();
         return notificationService.broadcastNotification(message, type);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteNotification(@PathVariable Long id) {
+        checkAdmin();
+        notificationService.deleteNotification(id);
+    }
 }

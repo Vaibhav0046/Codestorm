@@ -301,4 +301,111 @@ public class AuthServiceImpl implements AuthService {
                 .map(OtpVerification::getOtp)
                 .orElse(null);
     }
+
+    @Override
+    public void sendForgotPasswordOtp(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Email is required!");
+        }
+
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new RuntimeException("No registered account found with that email!"));
+
+        String otp = String.format("%06d", new Random().nextInt(1000000));
+
+        // Upsert: delete any existing OTP for this email first
+        otpVerificationRepository.findById(user.getEmail()).ifPresent(otpVerificationRepository::delete);
+
+        OtpVerification verification = OtpVerification.builder()
+                .email(user.getEmail())
+                .otp(otp)
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .build();
+        otpVerificationRepository.save(verification);
+
+        System.out.println("==========================================");
+        System.out.println("Password Reset OTP for " + user.getEmail() + ": " + otp);
+        System.out.println("==========================================");
+
+        try {
+            if (brevoApiKey == null || brevoApiKey.isBlank()) {
+                throw new RuntimeException("BREVO_API_KEY environment variable is not configured!");
+            }
+
+            Map<String, Object> sender = Map.of("name", brevoFromName, "email", brevoFromEmail);
+            Map<String, Object> recipient = Map.of("email", user.getEmail());
+            Map<String, Object> payload = Map.of(
+                "sender", sender,
+                "to", List.of(recipient),
+                "subject", "[CodeStorm] Password Reset OTP Code",
+                "htmlContent", buildForgotPasswordOtpEmailHtml(user.getEmail(), otp)
+            );
+
+            restClient.post()
+                .uri("https://api.brevo.com/v3/smtp/email")
+                .header("api-key", brevoApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(payload)
+                .retrieve()
+                .toBodilessEntity();
+
+            System.out.println("Password reset OTP email sent successfully to: " + user.getEmail());
+        } catch (Exception e) {
+            System.err.println("==== FORGOT PASSWORD OTP SEND FAILURE ====");
+            System.err.println("To: " + user.getEmail());
+            System.err.println("Error message: " + e.getMessage());
+            System.err.println("==========================================");
+            throw new RuntimeException("Failed to send OTP email: " + e.getMessage());
+        }
+    }
+
+    private String buildForgotPasswordOtpEmailHtml(String email, String otp) {
+        return "<!DOCTYPE html>\n" +
+               "<html>\n" +
+               "<head>\n" +
+               "  <title>CodeStorm Password Reset</title>\n" +
+               "</head>\n" +
+               "<body style='font-family:sans-serif;background-color:#0f172a;color:#f8fafc;padding:30px;'>\n" +
+               "  <div style='max-width:550px;margin:0 auto;background-color:#1e293b;padding:30px;border-radius:12px;border:1px solid #334155;'>\n" +
+               "    <h2 style='color:#38bdf8;margin-top:0;'>Password Reset Request</h2>\n" +
+               "    <p>We received a request to reset your password. Use the following verification OTP to verify your identity and complete the reset:</p>\n" +
+               "    <div style='background-color:#0f172a;padding:15px 30px;border-radius:8px;text-align:center;margin:25px 0;letter-spacing:10px;font-size:32px;font-weight:bold;color:#38bdf8;font-family:monospace;'>" + otp + "</div>\n" +
+               "    <p style='font-size:12px;color:#94a3b8;'>This code will expire in 5 minutes. If you did not request a password reset, please ignore this notice.</p>\n" +
+               "  </div>\n" +
+               "</body>\n" +
+               "</html>";
+    }
+
+    @Override
+    public void resetPassword(String email, String otp, String newPassword) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Email is required!");
+        }
+        if (otp == null || otp.trim().isEmpty()) {
+            throw new RuntimeException("OTP code is required!");
+        }
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new RuntimeException("New password is required!");
+        }
+
+        OtpVerification verification = otpVerificationRepository.findById(email.trim())
+                .orElseThrow(() -> new RuntimeException("No OTP verification code requested for this email!"));
+
+        if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
+            otpVerificationRepository.delete(verification);
+            throw new RuntimeException("OTP has expired! Please request a new one.");
+        }
+
+        if (!verification.getOtp().equals(otp.trim())) {
+            throw new RuntimeException("Incorrect OTP code. Please try again.");
+        }
+
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new RuntimeException("User not found!"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        otpVerificationRepository.delete(verification);
+    }
 }

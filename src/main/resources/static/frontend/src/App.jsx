@@ -24,6 +24,9 @@ import Highlights from './pages/Highlights';
 import AdminHighlights from './pages/AdminHighlights';
 import AdminGuests from './pages/AdminGuests';
 import Landing from './pages/Landing';
+import AdminEvaluation from './pages/AdminEvaluation';
+import Support from './pages/Support';
+import AdminCoordinators from './pages/AdminCoordinators';
 
 function App() {
   return (
@@ -87,6 +90,14 @@ function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Support />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
             {/* Private Admin Routes */}
             <Route path="/admin/analytics" element={
               <AdminRoute>
@@ -134,6 +145,22 @@ function App() {
               <AdminRoute>
                 <DashboardLayout>
                   <AdminGuests />
+                </DashboardLayout>
+              </AdminRoute>
+            } />
+
+            <Route path="/admin/evaluation" element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminEvaluation />
+                </DashboardLayout>
+              </AdminRoute>
+            } />
+
+            <Route path="/admin/coordinators" element={
+              <AdminRoute>
+                <DashboardLayout>
+                  <AdminCoordinators />
                 </DashboardLayout>
               </AdminRoute>
             } />

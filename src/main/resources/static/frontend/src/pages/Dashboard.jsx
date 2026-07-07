@@ -7,19 +7,20 @@ import {
   LayoutDashboard, Award, AlertCircle, Sparkles, CheckCircle2, 
   FileDown, Ticket, X, Calendar, MapPin, ChevronLeft, ChevronRight, 
   Flag, School, Users, Lightbulb, GraduationCap, ArrowRight, BookOpen,
-  Download, User
+  Download, User, Trash2
 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { notifications, tickerMessage } = useNotifications();
+  const { notifications, tickerMessage, deleteNotification } = useNotifications();
   const [myRegistrations, setMyRegistrations] = useState([]);
   const [highlights, setHighlights] = useState([]);
   const [guests, setGuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [timelineStages, setTimelineStages] = useState([]);
   
   // Slider State
   const [activeSlide, setActiveSlide] = useState(0);
@@ -60,6 +61,10 @@ export default function Dashboard() {
         // Fetch active guests
         const guestRes = await api.get('/api/guests');
         setGuests(guestRes.data);
+
+        // Fetch timeline stages
+        const timelineRes = await api.get('/api/timeline-stages');
+        setTimelineStages(timelineRes.data);
       } catch (err) {
         console.error('Error loading dashboard data:', err);
       } finally {
@@ -163,33 +168,7 @@ export default function Dashboard() {
     }
   ];
 
-  // Timeline Progress
-  const timelineStages = [
-    {
-      step: "01",
-      title: "Idea Registration",
-      status: "COMPLETED",
-      desc: "Form squads of 2-4 and select target theme problems."
-    },
-    {
-      step: "02",
-      title: "Internal Screening",
-      status: "COMPLETED",
-      desc: "Submit short abstract PPTs for college jury assessment."
-    },
-    {
-      step: "03",
-      title: "Finalist Nominations",
-      status: "ACTIVE",
-      desc: "Shortlisted final teams selected for the National Portal."
-    },
-    {
-      step: "04",
-      title: "Grand 36H Finale",
-      status: "UPCOMING",
-      desc: "Non-stop code development and live evaluation rounds."
-    }
-  ];
+
 
   return (
     <div className="space-y-6 text-slate-100 pb-12">
@@ -389,7 +368,7 @@ export default function Dashboard() {
                   <div>
                     <h3 className="text-xs font-bold text-slate-200">{stage.title}</h3>
                     <p className="text-[10px] text-slate-500 mt-1 leading-normal">
-                      {stage.desc}
+                      {stage.description || stage.desc}
                     </p>
                   </div>
                 </div>
@@ -501,23 +480,39 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-500 italic text-center py-6">No recent updates received.</p>
               ) : (
                 notifications
-                  .filter(note => {
-                    const isAdmin = user?.role === 'ROLE_ADMIN';
-                    return isAdmin || !note.message || !note.message.startsWith('New registration:');
-                  })
                   .map((note) => (
-                    <div key={note.id} className="p-3.5 rounded-xl bg-slate-950/40 border border-white/5 flex items-start space-x-3 transition-all hover:border-white/10 hover:bg-slate-950/60">
-                    <span className="text-lg mt-0.5">
-                      {note.type === 'SUCCESS' ? '🏆' : note.type === 'ALERT' ? '⚠️' : '📢'}
-                    </span>
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-200 leading-normal">{note.message}</p>
-                      <span className="text-[9px] text-slate-500 mt-1 block">
-                        {new Date(note.createdAt).toLocaleTimeString()}
-                      </span>
+                    <div key={note.id} className="p-3.5 rounded-xl bg-slate-950/40 border border-white/5 flex items-start justify-between space-x-3 transition-all hover:border-white/10 hover:bg-slate-950/60">
+                      <div className="flex items-start space-x-3">
+                        <span className="text-lg mt-0.5">
+                          {note.type === 'SUCCESS' ? '🏆' : note.type === 'ALERT' ? '⚠️' : '📢'}
+                        </span>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-200 leading-normal">{note.message}</p>
+                          <span className="text-[9px] text-slate-500 mt-1 block">
+                            {new Date(note.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                      {user?.role === 'ROLE_ADMIN' && (
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('Are you sure you want to delete this notice?')) {
+                              try {
+                                await deleteNotification(note.id);
+                                alert('Notice deleted successfully.');
+                              } catch (err) {
+                                alert('Failed to delete notice.');
+                              }
+                            }
+                          }}
+                          className="text-slate-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-900 transition-colors cursor-pointer"
+                          title="Delete Notice"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </div>

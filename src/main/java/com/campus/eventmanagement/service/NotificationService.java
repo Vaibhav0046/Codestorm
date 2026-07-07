@@ -15,4 +15,6 @@ public interface NotificationService {
     List<Notification> getUserNotifications(String email);
 
     List<Notification> getAllNotifications();
+
+    void deleteNotification(Long id);
 }

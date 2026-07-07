@@ -21,8 +21,9 @@ export const NotificationProvider = ({ children }) => {
     const fetchNotifications = async () => {
       try {
         const response = await api.get('/api/notifications');
-        setNotifications(response.data);
-        if (response.data.length > 0) setTickerMessage(response.data[0].message);
+        const filtered = response.data.filter(n => !n.message || !n.message.startsWith('New registration:'));
+        setNotifications(filtered);
+        if (filtered.length > 0) setTickerMessage(filtered[0].message);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
@@ -39,8 +40,7 @@ export const NotificationProvider = ({ children }) => {
         const data = JSON.parse(event.data);
         if (data.type === 'SYSTEM') { console.log(data.message); return; }
         if (data.recipientEmail === 'ALL' || data.recipientEmail === user.email) {
-          const isAdmin = user && user.role === 'ROLE_ADMIN';
-          if (!isAdmin && data.message && data.message.startsWith('New registration:')) {
+          if (data.message && data.message.startsWith('New registration:')) {
             return;
           }
           const newNote = { id: data.id, message: data.message, type: data.type, createdAt: data.createdAt };
@@ -59,8 +59,18 @@ export const NotificationProvider = ({ children }) => {
     return () => { if (ws) ws.close(); };
   }, [token, user]);
 
+  const deleteNotification = async (id) => {
+    try {
+      await api.delete(`/api/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  };
+
   return (
-    <NotificationContext.Provider value={{ notifications, tickerMessage, activeAlert, setTickerMessage, setActiveAlert }}>
+    <NotificationContext.Provider value={{ notifications, tickerMessage, activeAlert, setTickerMessage, setActiveAlert, deleteNotification }}>
       {children}
       {activeAlert && (
         <div className="fixed bottom-6 right-6 z-50 animate-bounce glass-effect border-l-4 border-sky-500 p-4 rounded-lg shadow-2xl max-w-sm">

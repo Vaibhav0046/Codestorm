@@ -51,6 +51,8 @@ public class Registration {
 
     private String utrNumber;
 
+    private String domain;
+
     @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @Builder.Default
     private List<Participant> participants = new ArrayList<>();

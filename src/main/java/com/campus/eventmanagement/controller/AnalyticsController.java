@@ -81,6 +81,9 @@ public class AnalyticsController {
         List<Event> events = eventRepository.findAll();
 
         for (Event event : events) {
+            if (!event.isActive()) {
+                continue;
+            }
             long count =
                     registrationRepository.findByEventId(event.getId()).size();
 
