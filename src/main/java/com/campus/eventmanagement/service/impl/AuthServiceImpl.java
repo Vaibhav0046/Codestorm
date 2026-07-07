@@ -55,10 +55,10 @@ public class AuthServiceImpl implements AuthService {
     @PostConstruct
     @Override
     public void seedAdmin() {
-        if (!userRepository.existsByEmail("admin@campus.com")) {
+        if (!userRepository.existsByEmail("vaibhav3538reddy@gmail.com")) {
             User admin = new User();
-            admin.setEmail("admin@campus.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setEmail("vaibhav3538reddy@gmail.com");
+            admin.setPassword(passwordEncoder.encode("nani@123"));
             admin.setTeamName("System Admin");
             admin.setCollege("Campus Admin HQ");
             admin.setPhone("1234567890");
