@@ -70,7 +70,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<Notification> getAllNotifications() {
-        return notificationRepository.findAll();
+        return notificationRepository.findByRecipientIsNullOrderByCreatedAtDesc();
     }
 
     @Override

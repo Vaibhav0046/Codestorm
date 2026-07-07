@@ -28,5 +28,6 @@ public class Notification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User recipient;
 }

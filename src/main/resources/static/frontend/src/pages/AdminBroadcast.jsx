@@ -33,7 +33,7 @@ export default function AdminBroadcast() {
   const fetchBroadcasts = async () => {
     try {
       const res = await api.get('/api/notifications/all');
-      setBroadcasts(res.data.filter(n => n.recipient === null && (!n.message || !n.message.startsWith('New registration:'))));
+      setBroadcasts(res.data.filter(n => !n.message || !n.message.startsWith('New registration:')));
     } catch (err) {
       console.error('Error fetching broadcasts:', err);
     }
