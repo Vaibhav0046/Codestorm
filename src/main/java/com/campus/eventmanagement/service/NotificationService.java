@@ -17,4 +17,6 @@ public interface NotificationService {
     List<Notification> getAllNotifications();
 
     void deleteNotification(Long id);
+
+    Notification updateNotification(Long id, String message, NotificationType type);
 }

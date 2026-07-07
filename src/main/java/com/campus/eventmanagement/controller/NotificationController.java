@@ -43,6 +43,12 @@ public class NotificationController {
         return notificationService.broadcastNotification(message, type);
     }
 
+    @PutMapping("/{id}")
+    public Notification updateNotification(@PathVariable Long id, @RequestParam String message, @RequestParam NotificationType type) {
+        checkAdmin();
+        return notificationService.updateNotification(id, message, type);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteNotification(@PathVariable Long id) {
         checkAdmin();

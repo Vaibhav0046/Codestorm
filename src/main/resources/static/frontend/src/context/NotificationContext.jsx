@@ -66,7 +66,12 @@ export const NotificationProvider = ({ children }) => {
             return;
           }
           const newNote = { id: data.id, message: data.message, type: data.type, createdAt: data.createdAt };
-          setNotifications(prev => [newNote, ...prev]);
+          setNotifications(prev => {
+            if (prev.some(n => n.id === data.id)) {
+              return prev.map(n => n.id === data.id ? newNote : n);
+            }
+            return [newNote, ...prev];
+          });
           setTickerMessage(data.message);
           setActiveAlert({ message: data.message, type: data.type });
           setTimeout(() => setActiveAlert(null), 6000);
@@ -91,8 +96,20 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  const editNotification = async (id, message, type) => {
+    try {
+      const response = await api.put(`/api/notifications/${id}?message=${encodeURIComponent(message)}&type=${type}`);
+      const updated = response.data;
+      setNotifications(prev => prev.map(n => n.id === id ? updated : n));
+      return updated;
+    } catch (error) {
+      console.error('Error editing notification:', error);
+      throw error;
+    }
+  };
+
   return (
-    <NotificationContext.Provider value={{ notifications, tickerMessage, activeAlert, setTickerMessage, setActiveAlert, deleteNotification, coordinators, fetchCoordinators }}>
+    <NotificationContext.Provider value={{ notifications, tickerMessage, activeAlert, setTickerMessage, setActiveAlert, deleteNotification, editNotification, coordinators, fetchCoordinators }}>
       {children}
       {activeAlert && (
         <div className="fixed bottom-6 right-6 z-50 animate-bounce glass-effect border-l-4 border-sky-500 p-4 rounded-lg shadow-2xl max-w-sm">

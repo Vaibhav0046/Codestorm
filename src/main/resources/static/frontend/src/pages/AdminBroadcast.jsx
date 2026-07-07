@@ -1,12 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Radio, Send, Sparkles, Trash2 } from 'lucide-react';
+import { Radio, Send, Sparkles, Trash2, Pencil, X } from 'lucide-react';
 
 export default function AdminBroadcast() {
   const [message, setMessage] = useState('');
   const [type, setType] = useState('INFO');
   const [submitting, setSubmitting] = useState(false);
   const [broadcasts, setBroadcasts] = useState([]);
+  
+  const [editingId, setEditingId] = useState(null);
+  const [editingMessage, setEditingMessage] = useState('');
+  const [editingType, setEditingType] = useState('INFO');
+
+  const handleStartEdit = (b) => {
+    setEditingId(b.id);
+    setEditingMessage(b.message);
+    setEditingType(b.type);
+  };
+
+  const handleSaveEdit = async (id) => {
+    if (!editingMessage.trim()) return;
+    try {
+      await api.put(`/api/notifications/${id}?message=${encodeURIComponent(editingMessage)}&type=${editingType}`);
+      setEditingId(null);
+      fetchBroadcasts();
+      alert('Announcement updated successfully!');
+    } catch (err) {
+      alert('Failed to edit announcement.');
+    }
+  };
 
   const fetchBroadcasts = async () => {
     try {
@@ -145,30 +167,92 @@ export default function AdminBroadcast() {
           ) : (
             <div className="space-y-3">
               {broadcasts.map((b) => (
-                <div key={b.id} className="p-4 rounded-xl bg-slate-950/40 border border-white/5 flex items-start justify-between space-x-4 hover:border-slate-800 transition-all">
-                  <div className="space-y-1.5 min-w-0 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
-                        b.type === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                        b.type === 'ALERT' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                        'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                      }`}>
-                        {b.type}
-                      </span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono">
-                        {new Date(b.createdAt).toLocaleString()}
-                      </span>
+                editingId === b.id ? (
+                  <div key={b.id} className="p-4 rounded-xl bg-slate-950/40 border border-sky-500/20 space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                      <span className="text-[9px] font-black uppercase text-sky-400">Editing Announcement</span>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="p-1 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <p className="text-xs text-slate-300 font-medium leading-relaxed break-words">{b.message}</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1">Message</label>
+                        <textarea
+                          required
+                          value={editingMessage}
+                          onChange={(e) => setEditingMessage(e.target.value)}
+                          rows="2"
+                          className="w-full bg-slate-950 border border-white/5 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center space-x-2">
+                          {['INFO', 'SUCCESS', 'ALERT'].map((lvl) => (
+                            <button
+                              key={lvl}
+                              type="button"
+                              onClick={() => setEditingType(lvl)}
+                              className={`px-2.5 py-1 rounded text-[8px] font-extrabold uppercase tracking-wider cursor-pointer border ${
+                                editingType === lvl
+                                  ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
+                                  : 'bg-slate-900 border-white/5 text-slate-500 hover:text-slate-300'
+                              }`}
+                            >
+                              {lvl}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <button
+                          onClick={() => handleSaveEdit(b.id)}
+                          className="bg-sky-500 hover:bg-sky-400 text-slate-950 text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-lg transition-all cursor-pointer shadow-md"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteBroadcast(b.id)}
-                    className="p-1.5 rounded-lg border border-white/5 bg-slate-950 text-slate-500 hover:text-red-400 hover:border-red-500/20 transition-all cursor-pointer flex-shrink-0 align-self-start"
-                    title="Delete Broadcast Notice"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                ) : (
+                  <div key={b.id} className="p-4 rounded-xl bg-slate-950/40 border border-white/5 flex items-start justify-between space-x-4 hover:border-slate-800 transition-all">
+                    <div className="space-y-1.5 min-w-0 flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
+                          b.type === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                          b.type === 'ALERT' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                          'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                        }`}>
+                          {b.type}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-bold font-mono">
+                          {new Date(b.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 font-medium leading-relaxed break-words">{b.message}</p>
+                    </div>
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleStartEdit(b)}
+                        className="p-1.5 rounded-lg border border-white/5 bg-slate-950 text-slate-500 hover:text-sky-400 hover:border-sky-500/20 transition-all cursor-pointer"
+                        title="Edit Announcement"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBroadcast(b.id)}
+                        className="p-1.5 rounded-lg border border-white/5 bg-slate-950 text-slate-500 hover:text-red-400 hover:border-red-500/20 transition-all cursor-pointer"
+                        title="Delete Broadcast Notice"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )
               ))}
             </div>
           )}

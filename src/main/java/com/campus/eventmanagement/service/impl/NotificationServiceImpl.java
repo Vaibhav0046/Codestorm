@@ -78,6 +78,17 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.deleteById(id);
     }
 
+    @Override
+    public Notification updateNotification(Long id, String message, NotificationType type) {
+        Notification note = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        note.setMessage(message);
+        note.setType(type);
+        Notification saved = notificationRepository.save(note);
+        pushWsNotification(saved);
+        return saved;
+    }
+
     private void pushWsNotification(Notification note) {
         String json = String.format(
                 "{\"id\":%d,\"message\":\"%s\",\"type\":\"%s\",\"createdAt\":\"%s\",\"recipientEmail\":\"%s\"}",
