@@ -41,7 +41,7 @@ public class ReportServiceImpl implements ReportService {
         StringBuilder csv = new StringBuilder();
         
         // CSV Header
-        csv.append("Registration ID,Event Name,Domain,Registered Account,Team Name,Registration Date,Status,Certificate Code,Participant Name,Participant Email,Phone,T-Shirt Size,Food Preference,College,Lab Allotment\n");
+        csv.append("Registration ID,Event Name,Domain,Theme,Registered Account,Team Name,Registration Date,Status,Certificate Code,Participant Name,Participant Email,Phone,T-Shirt Size,Food Preference,College,Lab Allotment\n");
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -51,10 +51,11 @@ public class ReportServiceImpl implements ReportService {
                 continue;
             }
             
-            String base = String.format("%d,%s,%s,%s,%s,%s,%s,%s",
+            String base = String.format("%d,%s,%s,%s,%s,%s,%s,%s,%s",
                     r.getId(),
                     escapeCsv(r.getEvent().getName()),
                     escapeCsv(r.getDomain() != null ? r.getDomain() : "N/A"),
+                    escapeCsv(r.getTheme() != null ? r.getTheme() : "N/A"),
                     escapeCsv(r.getUser().getEmail()),
                     escapeCsv(r.getTeamName()),
                     r.getRegistrationDate().format(dtf),
@@ -650,7 +651,7 @@ public class ReportServiceImpl implements ReportService {
     public byte[] generatePreviousRegistrationsCsv(List<com.campus.eventmanagement.entity.PreviousRegistration> list) {
         StringBuilder csv = new StringBuilder();
         // CSV Header
-        csv.append("Event Name,Domain,Team Name,College,Participant Name,Email,Phone,T-Shirt Size,Food Preference,Status,Registration Date\n");
+        csv.append("Event Name,Domain,Theme,Team Name,College,Participant Name,Email,Phone,T-Shirt Size,Food Preference,Status,Registration Date\n");
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -659,9 +660,10 @@ public class ReportServiceImpl implements ReportService {
             if (!"APPROVED".equals(p.getStatus())) {
                 continue;
             }
-            csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+            csv.append(String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
                     escapeCsv(p.getEventName()),
                     escapeCsv(p.getDomain() != null ? p.getDomain() : "N/A"),
+                    escapeCsv(p.getTheme() != null ? p.getTheme() : "N/A"),
                     escapeCsv(p.getTeamName()),
                     escapeCsv(p.getCollege()),
                     escapeCsv(p.getParticipantName()),
@@ -699,14 +701,14 @@ public class ReportServiceImpl implements ReportService {
         subtitle.setSpacingAfter(15);
         document.add(subtitle);
 
-        // 9 Detailed Columns Table
-        PdfPTable table = new PdfPTable(9);
+        // 10 Detailed Columns Table
+        PdfPTable table = new PdfPTable(10);
         table.setWidthPercentage(100);
-        table.setWidths(new float[]{1.5f, 2.0f, 2.0f, 2.0f, 2.5f, 1.8f, 1.0f, 1.0f, 1.2f});
+        table.setWidths(new float[]{1.2f, 1.2f, 2.0f, 1.8f, 1.8f, 2.2f, 1.6f, 0.8f, 0.8f, 1.0f});
 
         // Headers
         Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
-        String[] headers = {"Domain", "Team Name", "College", "Participant", "Email", "Phone", "T-Shirt", "Food", "Status"};
+        String[] headers = {"Domain", "Theme", "Team Name", "College", "Participant", "Email", "Phone", "T-Shirt", "Food", "Status"};
         for (String header : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(header, headFont));
             cell.setBackgroundColor(new Color(26, 54, 93)); // Premium Navy
@@ -724,6 +726,7 @@ public class ReportServiceImpl implements ReportService {
                 continue;
             }
             table.addCell(createCell(p.getDomain() != null ? p.getDomain() : "N/A", dataFont, Element.ALIGN_LEFT));
+            table.addCell(createCell(p.getTheme() != null ? p.getTheme() : "N/A", dataFont, Element.ALIGN_LEFT));
             table.addCell(createCell(p.getTeamName(), dataFont, Element.ALIGN_LEFT));
             table.addCell(createCell(p.getCollege(), dataFont, Element.ALIGN_LEFT));
             table.addCell(createCell(p.getParticipantName(), dataFont, Element.ALIGN_LEFT));

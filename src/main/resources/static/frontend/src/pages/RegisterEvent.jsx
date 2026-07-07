@@ -16,6 +16,7 @@ export default function RegisterEvent() {
   const [teamName, setTeamName] = useState(user?.teamName || '');
   const [participants, setParticipants] = useState([]);
   const [domain, setDomain] = useState('');
+  const [theme, setTheme] = useState('');
   
   // Payment Details State
   const [utrNumber, setUtrNumber] = useState('');
@@ -116,7 +117,8 @@ export default function RegisterEvent() {
         participants: participants,
         paymentScreenshot: screenshotFile,
         utrNumber: utrNumber,
-        domain: domain
+        domain: domain,
+        theme: theme
       });
       alert('Registration submitted successfully! Pending administrator approval.');
       navigate('/registrations'); // Route modified to registrations
@@ -138,6 +140,10 @@ export default function RegisterEvent() {
 
   const domainsList = event?.domains
     ? event.domains.split(',').map(d => d.trim()).filter(d => d.length > 0)
+    : [];
+
+  const themesList = event?.themes
+    ? event.themes.split(',').map(t => t.trim()).filter(t => t.length > 0)
     : [];
 
   return (
@@ -317,6 +323,26 @@ export default function RegisterEvent() {
                           ))}
                         </select>
                         <p className="text-[9px] text-slate-500 font-medium">Domain track can only be chosen by the Squad Leader and applies to the entire team.</p>
+                      </div>
+                    )}
+
+                    {index === 0 && themesList.length > 0 && (
+                      <div className="md:col-span-2 bg-indigo-500/5 p-4 rounded-xl border border-indigo-500/10 space-y-2 mt-2">
+                        <label className="block text-[9px] font-black uppercase text-indigo-400 tracking-widest font-heading">
+                          💡 Challenge Track Theme Selection
+                        </label>
+                        <select 
+                          required
+                          value={theme} 
+                          onChange={(e) => setTheme(e.target.value)}
+                          className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs focus:outline-none font-extrabold text-indigo-300 font-sans"
+                        >
+                          <option value="" className="bg-slate-950 text-slate-400">-- Choose Event Theme (Required) --</option>
+                          {themesList.map(t => (
+                            <option key={t} value={t} className="bg-slate-950 text-slate-200">{t}</option>
+                          ))}
+                        </select>
+                        <p className="text-[9px] text-slate-500 font-medium">Theme track is mandatory for this event and must be selected by the Squad Leader.</p>
                       </div>
                     )}
                   </div>

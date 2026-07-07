@@ -49,4 +49,13 @@ public class RegistrationRequest {
     public void setDomain(String domain) {
         this.domain = domain;
     }
+
+    private String theme;
+
+    public String getTheme() {
+        return theme;
+    }
+    public void setTheme(String theme) {
+        this.theme = theme;
+    }
 }

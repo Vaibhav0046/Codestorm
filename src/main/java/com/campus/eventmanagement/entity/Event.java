@@ -57,4 +57,5 @@ public class Event {
     private String helpDeskDetails;
 
     private String domains;
+    private String themes;
 }

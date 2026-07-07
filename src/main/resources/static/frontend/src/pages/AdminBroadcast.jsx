@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Radio, Send, Sparkles } from 'lucide-react';
+import { Radio, Send, Sparkles, Trash2 } from 'lucide-react';
 
 export default function AdminBroadcast() {
   const [message, setMessage] = useState('');
   const [type, setType] = useState('INFO');
   const [submitting, setSubmitting] = useState(false);
+  const [broadcasts, setBroadcasts] = useState([]);
+
+  const fetchBroadcasts = async () => {
+    try {
+      const res = await api.get('/api/notifications/all');
+      setBroadcasts(res.data.filter(n => n.recipient === null));
+    } catch (err) {
+      console.error('Error fetching broadcasts:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBroadcasts();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,10 +30,21 @@ export default function AdminBroadcast() {
       await api.post(`/api/notifications/broadcast?message=${encodeURIComponent(message)}&type=${type}`);
       alert('Broadcast notification published successfully! Users notified in real-time.');
       setMessage('');
+      fetchBroadcasts();
     } catch (err) {
       alert('Failed to publish system broadcast.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteBroadcast = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this broadcast from the notice board history?')) return;
+    try {
+      await api.delete(`/api/notifications/${id}`);
+      fetchBroadcasts();
+    } catch (err) {
+      alert('Failed to delete broadcast notification.');
     }
   };
 
@@ -37,9 +62,10 @@ export default function AdminBroadcast() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs font-medium">
-        {/* Broadcast Form Panel */}
-        <div className="lg:col-span-2 glass-effect rounded-2xl p-6 md:p-8 border border-white/5 space-y-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        {/* Left Column: Form & History */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="glass-effect rounded-2xl p-6 md:p-8 border border-white/5 space-y-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
           
           <div>
             <h3 className="text-md font-bold text-slate-200 font-heading">Issue Global Symposium Bulletin</h3>
@@ -106,6 +132,48 @@ export default function AdminBroadcast() {
             </button>
           </form>
         </div>
+
+        {/* Broadcast History Panel */}
+        <div className="glass-effect rounded-2xl p-6 border border-white/5 space-y-4 shadow-xl">
+          <div>
+            <h3 className="text-sm font-bold text-slate-200 font-heading uppercase tracking-wider">Broadcast History</h3>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">History of live announcements published. Admins can delete them to clear them from notice boards.</p>
+          </div>
+
+          {broadcasts.length === 0 ? (
+            <p className="text-[10px] text-slate-500 py-4">No broadcast history found.</p>
+          ) : (
+            <div className="space-y-3">
+              {broadcasts.map((b) => (
+                <div key={b.id} className="p-4 rounded-xl bg-slate-950/40 border border-white/5 flex items-start justify-between space-x-4 hover:border-slate-800 transition-all">
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
+                        b.type === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                        b.type === 'ALERT' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                        'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                      }`}>
+                        {b.type}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono">
+                        {new Date(b.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-medium leading-relaxed break-words">{b.message}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteBroadcast(b.id)}
+                    className="p-1.5 rounded-lg border border-white/5 bg-slate-950 text-slate-500 hover:text-red-400 hover:border-red-500/20 transition-all cursor-pointer flex-shrink-0 align-self-start"
+                    title="Delete Broadcast Notice"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
         {/* Right Cockpit Instructions Widget */}
         <div className="glass-effect rounded-2xl p-6 border border-white/5 h-fit space-y-4 shadow-xl">

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { X, Phone, User, ShieldAlert, Award, AlertCircle, Info } from 'lucide-react';
+import { useNotifications } from '../context/NotificationContext';
 
 export const Footer = () => {
   const [showModal, setShowModal] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const { coordinators } = useNotifications();
 
   return (
     <>
@@ -47,26 +49,26 @@ export const Footer = () => {
                 For any issues regarding registrations, lab assignments, UPI payment validation, or timetable plans, please contact coordinators:
               </p>
 
-              <div className="space-y-3">
-                {[
-                  { name: 'Prof. Srinivas Reddy', role: 'Symposium Convener', phone: '+91 98480 22338' },
-                  { name: 'Mrs. K. Rama', role: 'Co-coordinator', phone: '+91 75690 59847' },
-                  { name: 'Mr. T. Vinay', role: 'Technical Desk Support', phone: '+91 70138 29445' }
-                ].map((c, i) => (
-                  <div key={i} className="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="font-extrabold text-slate-200 flex items-center space-x-1">
-                        <User className="w-3.5 h-3.5 text-sky-400 mr-1" />
-                        {c.name}
-                      </span>
-                      <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider">{c.role}</span>
+              <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+                {coordinators && coordinators.length > 0 ? (
+                  coordinators.map((c) => (
+                    <div key={c.id} className="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-extrabold text-slate-200 flex items-center space-x-1">
+                          <User className="w-3.5 h-3.5 text-sky-400 mr-1" />
+                          {c.name}
+                        </span>
+                        <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider">{c.role}</span>
+                      </div>
+                      <p className="text-slate-400 font-semibold flex items-center mt-1">
+                        <Phone className="w-3.5 h-3.5 text-slate-500 mr-1" />
+                        <span>{c.phone}</span>
+                      </p>
                     </div>
-                    <p className="text-slate-400 font-semibold flex items-center mt-1">
-                      <Phone className="w-3.5 h-3.5 text-slate-500 mr-1" />
-                      <span>{c.phone}</span>
-                    </p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-[10px] text-slate-500 text-center py-2">No coordinators available.</p>
+                )}
               </div>
             </div>
           </div>

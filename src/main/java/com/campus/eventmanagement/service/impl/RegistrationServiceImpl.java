@@ -66,6 +66,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         reg.setRegistrationDate(LocalDateTime.now());
         reg.setStatus(RegistrationStatus.PENDING);
         reg.setDomain(request.getDomain());
+        reg.setTheme(request.getTheme());
 
         // Build dynamic lab-batch combos based on the event configuration!
         String labsStr = event.getLabsConfig() != null && !event.getLabsConfig().trim().isEmpty() 

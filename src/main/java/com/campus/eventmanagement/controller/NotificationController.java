@@ -31,6 +31,12 @@ public class NotificationController {
         return notificationService.getUserNotifications(email);
     }
 
+    @GetMapping("/all")
+    public List<Notification> getAllNotifications() {
+        checkAdmin();
+        return notificationService.getAllNotifications();
+    }
+
     @PostMapping("/broadcast")
     public Notification broadcast(@RequestParam String message, @RequestParam NotificationType type) {
         checkAdmin();

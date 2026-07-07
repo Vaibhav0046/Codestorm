@@ -27,4 +27,5 @@ public class PreviousRegistration {
     private String status;
     private LocalDateTime registrationDate;
     private String domain;
+    private String theme;
 }

@@ -193,6 +193,18 @@ export default function MyEnrolls() {
                       <tr key={reg.id} className="hover:bg-slate-900/20 transition-colors">
                         <td className="py-4 px-2 font-bold text-slate-200">
                           <div>{reg.event.name}</div>
+                          <div className="flex flex-wrap items-center mt-1">
+                            {reg.domain && (
+                              <span className="inline-block bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase mr-1.5">
+                                Track: {reg.domain}
+                              </span>
+                            )}
+                            {reg.theme && (
+                              <span className="inline-block bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase">
+                                Theme: {reg.theme}
+                              </span>
+                            )}
+                          </div>
                           {reg.event.timetablePdf && (
                             <button
                               onClick={(e) => handleDownloadTimetable(e, reg.event.timetablePdf, reg.event.name)}

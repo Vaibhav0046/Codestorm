@@ -174,6 +174,7 @@ public class EventServiceImpl implements EventService {
                         .status(r.getStatus().name())
                         .registrationDate(r.getRegistrationDate())
                         .domain(r.getDomain())
+                        .theme(r.getTheme())
                         .build();
                 previousRegistrationRepository.save(prev);
             } else {
@@ -190,6 +191,7 @@ public class EventServiceImpl implements EventService {
                             .status(r.getStatus().name())
                             .registrationDate(r.getRegistrationDate())
                             .domain(r.getDomain())
+                            .theme(r.getTheme())
                             .build();
                     previousRegistrationRepository.save(prev);
                 }

@@ -1,24 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import api from '../api';
+import React from 'react';
 import { Mail, Phone, User, HelpCircle, ShieldAlert } from 'lucide-react';
+import { useNotifications } from '../context/NotificationContext';
 
 export default function Support() {
-  const [coordinators, setCoordinators] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCoordinators = async () => {
-      try {
-        const res = await api.get('/api/coordinators');
-        setCoordinators(res.data);
-      } catch (err) {
-        console.error('Error fetching coordinators:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCoordinators();
-  }, []);
+  const { coordinators } = useNotifications();
 
   const getInitials = (name) => {
     return name
@@ -46,7 +31,7 @@ export default function Support() {
           <div className="glass-effect rounded-2xl border border-white/5 p-6 space-y-4 shadow-xl">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider font-heading">Symposium Committee Coordinators</h2>
             
-            {loading ? (
+            {!coordinators ? (
               <div className="flex items-center justify-center py-12">
                 <svg className="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -13,7 +13,7 @@ export default function AdminEvents() {
     minTeamSize: 2, maxTeamSize: 4, date: '', venue: '', active: true,
     labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5,
     timetablePdf: '', extraInfo: '', upiId: '', paymentQr: '',
-    helpDeskDetails: '', domains: ''
+    helpDeskDetails: '', domains: '', themes: ''
   });
   const [selectedQrFile, setSelectedQrFile] = useState(null);
   const [previousEventNames, setPreviousEventNames] = useState([]);
@@ -104,7 +104,7 @@ export default function AdminEvents() {
     setFormData({ 
       name: '', description: '', type: 'TEAM', minTeamSize: 2, maxTeamSize: 4, date: '', venue: '', active: true,
       labsConfig: 'Lab 1, Lab 2, Lab 3', maxBatchSize: 5, timetablePdf: '', extraInfo: '', upiId: '', paymentQr: '',
-      helpDeskDetails: '', domains: ''
+      helpDeskDetails: '', domains: '', themes: ''
     });
     setSelectedQrFile(null);
     setShowModal(true);
@@ -124,7 +124,8 @@ export default function AdminEvents() {
       upiId: event.upiId || '',
       paymentQr: event.paymentQr || '',
       helpDeskDetails: event.helpDeskDetails || '',
-      domains: event.domains || ''
+      domains: event.domains || '',
+      themes: event.themes || ''
     });
     setSelectedQrFile(null);
     setShowModal(true);
@@ -366,17 +367,23 @@ export default function AdminEvents() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Help Desk / Coordinator Details</label>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Help Desk Details</label>
                   <input type="text" name="helpDeskDetails" value={formData.helpDeskDetails} onChange={handleChange}
                     placeholder="e.g. Coordinator: Dr. V. Srinivas (9988776655)"
                     className="w-full glass-input rounded-xl px-4 py-2.5 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Domain Configurations (comma-separated)</label>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Domains (comma-separated)</label>
                   <input type="text" name="domains" value={formData.domains} onChange={handleChange}
-                    placeholder="e.g. Web Dev, App Dev, Cloud Architecture"
+                    placeholder="e.g. Web Dev, App Dev"
+                    className="w-full glass-input rounded-xl px-4 py-2.5 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1.5 font-heading">Event Themes (comma-separated)</label>
+                  <input type="text" name="themes" value={formData.themes} onChange={handleChange}
+                    placeholder="e.g. AI/ML, Cyber Security"
                     className="w-full glass-input rounded-xl px-4 py-2.5 focus:outline-none" />
                 </div>
               </div>

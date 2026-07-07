@@ -52,6 +52,7 @@ public class Registration {
     private String utrNumber;
 
     private String domain;
+    private String theme;
 
     @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @Builder.Default

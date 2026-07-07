@@ -12,9 +12,12 @@ import java.util.List;
 public class CoordinatorController {
 
     private final CoordinatorRepository coordinatorRepository;
+    private final com.campus.eventmanagement.websocket.NotificationWebSocketHandler webSocketHandler;
 
-    public CoordinatorController(CoordinatorRepository coordinatorRepository) {
+    public CoordinatorController(CoordinatorRepository coordinatorRepository,
+                                 com.campus.eventmanagement.websocket.NotificationWebSocketHandler webSocketHandler) {
         this.coordinatorRepository = coordinatorRepository;
+        this.webSocketHandler = webSocketHandler;
     }
 
     @PostConstruct
@@ -49,6 +52,14 @@ public class CoordinatorController {
         }
     }
 
+    private void triggerCoordinatorsUpdate() {
+        try {
+            webSocketHandler.broadcast("{\"type\":\"COORDINATORS_UPDATED\"}");
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
     @GetMapping
     public List<Coordinator> getAllCoordinators() {
         return coordinatorRepository.findAll();
@@ -57,7 +68,9 @@ public class CoordinatorController {
     @PostMapping
     public Coordinator createCoordinator(@RequestBody Coordinator coordinator) {
         checkAdmin();
-        return coordinatorRepository.save(coordinator);
+        Coordinator saved = coordinatorRepository.save(coordinator);
+        triggerCoordinatorsUpdate();
+        return saved;
     }
 
     @PutMapping("/{id}")
@@ -69,7 +82,9 @@ public class CoordinatorController {
         c.setEmail(details.getEmail());
         c.setPhone(details.getPhone());
         c.setRole(details.getRole());
-        return coordinatorRepository.save(c);
+        Coordinator updated = coordinatorRepository.save(c);
+        triggerCoordinatorsUpdate();
+        return updated;
     }
 
     @DeleteMapping("/{id}")
@@ -78,6 +93,7 @@ public class CoordinatorController {
         Coordinator c = coordinatorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Coordinator not found!"));
         coordinatorRepository.delete(c);
+        triggerCoordinatorsUpdate();
         return "Coordinator deleted successfully";
     }
 }

@@ -11,6 +11,7 @@ export default function AdminRegistrations() {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedTshirt, setSelectedTshirt] = useState('ALL');
   const [selectedFood, setSelectedFood] = useState('ALL');
+  const [selectedCollege, setSelectedCollege] = useState('ALL');
   const [sortBy, setSortBy] = useState('DATE_DESC');
   const [expandedRegId, setExpandedRegId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -133,6 +134,10 @@ export default function AdminRegistrations() {
     link.click();
   };
 
+  const collegeOptions = Array.from(new Set(registrations.map(r => {
+    return (r.participants[0]?.college || r.user.college || '').trim();
+  }).filter(c => c.length > 0))).sort();
+
   const filtered = registrations
     .filter(r => {
       const matchesSearch = r.teamName.toLowerCase().includes(search.toLowerCase()) ||
@@ -143,7 +148,10 @@ export default function AdminRegistrations() {
       const matchesTshirt = selectedTshirt === 'ALL' || r.participants.some(p => p.tshirtSize === selectedTshirt);
       const matchesFood = selectedFood === 'ALL' || r.participants.some(p => p.foodPreference === selectedFood);
       
-      return matchesSearch && matchesEvent && matchesStatus && matchesTshirt && matchesFood;
+      const collegeName = (r.participants[0]?.college || r.user.college || '').trim();
+      const matchesCollege = selectedCollege === 'ALL' || collegeName.toLowerCase() === selectedCollege.toLowerCase();
+      
+      return matchesSearch && matchesEvent && matchesStatus && matchesTshirt && matchesFood && matchesCollege;
     })
     .sort((a, b) => {
       if (sortBy === 'DATE_DESC') {
@@ -243,7 +251,7 @@ export default function AdminRegistrations() {
         </div>
 
         {/* Row 2: Sub-Column and Sort Controls */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full border-t border-white/5 pt-3.5">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 w-full border-t border-white/5 pt-3.5">
           {/* Status Filter */}
           <div className="relative text-xs">
             <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}
@@ -277,6 +285,16 @@ export default function AdminRegistrations() {
               <option value="ALL">All Food</option>
               <option value="VEG">VEG Only</option>
               <option value="NON_VEG">NON-VEG Only</option>
+            </select>
+          </div>
+
+          {/* College Filter */}
+          <div className="relative text-xs flex items-center">
+            <span className="absolute left-3 pointer-events-none text-slate-500 font-extrabold text-[10px]">🏫</span>
+            <select value={selectedCollege} onChange={(e) => setSelectedCollege(e.target.value)}
+              className="w-full glass-input rounded-xl pl-8 pr-2 py-2.5 focus:outline-none text-slate-300">
+              <option value="ALL">All Colleges</option>
+              {collegeOptions.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
@@ -349,6 +367,11 @@ export default function AdminRegistrations() {
                       {reg.domain && (
                         <div className="text-[9px] text-sky-400 font-bold uppercase tracking-wider mt-0.5">
                           Track: {reg.domain}
+                        </div>
+                      )}
+                      {reg.theme && (
+                        <div className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider mt-0.5">
+                          Theme: {reg.theme}
                         </div>
                       )}
                       {reg.labAllotment && (
