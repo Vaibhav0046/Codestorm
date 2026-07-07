@@ -428,6 +428,13 @@ export default function AdminRegistrations() {
                           </button>
                         </>
                       )}
+                      {reg.status === 'REJECTED' && (
+                        <button onClick={() => handleUpdateStatus(reg.id, 'APPROVED')}
+                          className="p-1.5 rounded-lg bg-emerald-950/20 border border-emerald-900/35 hover:bg-emerald-500 hover:text-slate-950 text-emerald-400 hover:border-transparent transition-all cursor-pointer"
+                          title="Revert Rejection and Approve Registration">
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
                       {reg.status === 'APPROVED' && (
                         <button onClick={() => downloadSingleCertificate(reg.id, reg.teamName)}
                           className="bg-yellow-500/10 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/20 px-2.5 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest flex items-center space-x-1 cursor-pointer transition-all">
